@@ -1,0 +1,30 @@
+# --- Java / Gradle ---
+/build/
+/out/
+/.gradle/
+!gradle/wrapper/**
+
+# --- Spring Boot ---
+/target/
+
+# --- IntelliJ / IDE ---
+.idea/
+*.iml
+
+# --- macOS ---
+.DS_Store
+
+# --- Node / React ---
+**/node_modules/
+**/dist/
+**/.next/
+npm-debug.log*
+yarn-error.log*
+
+# --- Environment / Secrets ---
+*.env
+*.env.*
+application-local.yml
+
+# --- Git ---
+.git/
