@@ -1,90 +1,127 @@
-
-import 'react-native-gesture-handler';
 import * as React from 'react';
+import { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons'; // ✅ expo 제거 후 변경
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 
-import HomeScreen from './src/main/screens/HomeScreen';
-import ReviewListScreen from './src/main/screens/ReviewListScreen';
-import ReviewDetailScreen from './src/main/screens/ReviewDetailScreen';
-import GroupScreen from './src/main/screens/GroupScreen';
-import MyScreen from './src/main/screens/MyScreen';
-import SettingsScreen from './src/main/screens/SettingsScreen';
+// --- 화면 import ---
+import HomeScreen from './src/features/review/screens/HomeScreen';
+import ReviewDetailScreen from './src/features/review/screens/ReviewDetailScreen';
+import ReviewListScreen from './src/features/review/screens/ReviewListScreen';
+import MyPageScreen from './src/features/user/screens/MyPageScreen';
+import SettingsScreen from './src/features/user/screens/SettingsScreen';
 
-// 🔹 Stack 타입 정의
+// 스플래시 화면 자동숨김 방지 (폰트 로딩 끝나기 전까지 유지)
+SplashScreen.preventAutoHideAsync();
+
+// --- 네비게이션 타입 ---
 export type RootStackParamList = {
-  Tabs: undefined;
-  ReviewList: { category: string };
-  ReviewDetail: {
-    review: { id: string; title: string; content: string; image?: string };
-  };
+    HomeTabs: undefined;
+    ReviewList: { category: string };
+    ReviewDetail: {
+        review: {
+            id: string;
+            title: string;
+            content: string;
+            image?: string;
+            rating?: number;
+        };
+    };
 };
 
-const Stack = createStackNavigator<RootStackParamList>();
+// --- 네비게이터 선언 ---
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-const TabNavigator = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarShowLabel: true,
-      tabBarStyle: {
-        backgroundColor: '#fff',
-        borderTopWidth: 0.3,
-        borderTopColor: '#ccc',
-        height: 60,
-        paddingBottom: 6,
-      },
-      tabBarIcon: ({ color, size }) => {
-        let iconName: string = 'home-outline';
-        if (route.name === 'Feed') iconName = 'home-outline';
-        else if (route.name === 'Group') iconName = 'people-outline';
-        else if (route.name === 'My') iconName = 'person-outline';
-        else if (route.name === 'Settings') iconName = 'settings-outline';
-        return <Icon name={iconName} size={size} color={color} />;
-      },
-      tabBarActiveTintColor: '#c8a97e',
-      tabBarInactiveTintColor: '#999',
-    })}
-  >
-    <Tab.Screen name="Feed" component={HomeScreen} options={{ title: '피드' }} />
-    <Tab.Screen name="Group" component={GroupScreen} options={{ title: '그룹' }} />
-    <Tab.Screen name="My" component={MyScreen} options={{ title: 'MY' }} />
-    <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: '설정' }} />
-  </Tab.Navigator>
-);
+// --- 하단 탭 ---
+function HomeTabs() {
+    return (
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarActiveTintColor: '#C8A97E',
+                tabBarInactiveTintColor: '#B5B2AE',
+                tabBarStyle: {
+                    backgroundColor: '#FFFFFF',
+                    borderTopWidth: 0.3,
+                    borderTopColor: '#E5E3E0',
+                    height: 60,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.04,
+                    shadowRadius: 4,
+                    elevation: 2,
+                },
+                tabBarIcon: ({ color }) => {
+                    let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
+                    if (route.name === 'Home') iconName = 'home-outline';
+                    else if (route.name === 'My') iconName = 'person-outline';
+                    else if (route.name === 'Settings') iconName = 'settings-outline';
+                    return <Ionicons name={iconName} size={22} color={color} />;
+                },
+                tabBarLabelStyle: {
+                    fontSize: 12,
+                    fontWeight: '500',
+                    marginBottom: 4,
+                },
+            })}
+        >
+            <Tab.Screen name="Home" component={HomeScreen} options={{ title: '피드' }} />
+            <Tab.Screen name="My" component={MyPageScreen} options={{ title: 'My' }} />
+            <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: '설정' }} />
+        </Tab.Navigator>
+    );
+}
 
-const App = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        {/* 🔹 탭바 포함된 메인 화면 */}
-        <Stack.Screen
-          name="Tabs"
-          component={TabNavigator}
-          options={{ headerShown: false }}
-        />
+// --- 앱 메인 ---
+export default function App() {
+    const [fontsLoaded] = useFonts({
+        // Ionicons 폰트 로드
+        Ionicons: require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
+    });
 
-        {/* 🔹 독후감 목록 */}
-        <Stack.Screen
-          name="ReviewList"
-          component={ReviewListScreen}
-          options={({ route }) => ({
-            title: route.params?.category || '독후감 목록',
-          })}
-        />
+    // 폰트 로드 완료 시 스플래시 숨기기
+    useEffect(() => {
+        if (fontsLoaded) {
+            SplashScreen.hideAsync();
+        }
+    }, [fontsLoaded]);
 
-        {/* 🔹 독후감 상세 */}
-        <Stack.Screen
-          name="ReviewDetail"
-          component={ReviewDetailScreen}
-          options={{ title: '독후감 상세보기', headerBackTitle: '뒤로' }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-};
+    if (!fontsLoaded) return null; // 로딩 중엔 아무것도 표시 X
 
-export default App;
+    return (
+        <NavigationContainer>
+            <Stack.Navigator initialRouteName="HomeTabs">
+                <Stack.Screen
+                    name="HomeTabs"
+                    component={HomeTabs}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="ReviewList"
+                    component={ReviewListScreen}
+                    options={{
+                        headerShown: true,
+                        title: '리뷰 목록',
+                        headerTintColor: '#2F2B28',
+                        headerStyle: { backgroundColor: '#FFFFFF' },
+                        headerTitleStyle: { fontWeight: '600' },
+                    }}
+                />
+                <Stack.Screen
+                    name="ReviewDetail"
+                    component={ReviewDetailScreen}
+                    options={{
+                        headerShown: true,
+                        title: '상세 보기',
+                        headerTintColor: '#2F2B28',
+                        headerStyle: { backgroundColor: '#FFFFFF' },
+                        headerTitleStyle: { fontWeight: '600' },
+                    }}
+                />
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
+}
