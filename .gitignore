@@ -73,3 +73,22 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+
+# === iOS build caches & temporary ===
+ios/Pods/
+ios/build/
+ios/DerivedData/
+~/Library/Developer/Xcode/DerivedData/
+
+# === React Native specific ===
+.expo/
+dist/
+tmp/
+temp/
+*.log
+
+# === macOS system ===
+ehthumbs.db
+Thumbs.db
+

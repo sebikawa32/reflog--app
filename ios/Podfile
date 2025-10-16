@@ -19,16 +19,27 @@ target 'frontend' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :hermes_enabled => true,        # ✅ Hermes 유지
+    :new_arch_enabled => false,     # ✅ New Architecture 완전 OFF
+    :fabric_enabled => false        # ✅ Fabric도 확실히 OFF
   )
 
   post_install do |installer|
+    # ✅ 모든 Pod에 대해 New Architecture 비활성화 강제 적용
+    installer.pods_project.targets.each do |t|
+      t.build_configurations.each do |config|
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        unless config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'].include?('RCT_NEW_ARCH_ENABLED=0')
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'RCT_NEW_ARCH_ENABLED=0'
+        end
+      end
+    end
+
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false
     )
   end
 end
