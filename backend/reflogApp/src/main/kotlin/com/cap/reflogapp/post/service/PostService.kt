@@ -7,6 +7,7 @@ import com.cap.reflogapp.post.repository.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Service
 class PostService(
@@ -32,41 +33,9 @@ class PostService(
             )
         )
 
-        // 카테고리별 상세 저장
-        when (request.category) {
-            "book" -> {
-                val detail = objectMapper.convertValue(request.detail, BookDetail::class.java)
-                detail.postId = post.postId
-                bookRepo.save(detail)
-            }
-            "movie" -> {
-                val detail = objectMapper.convertValue(request.detail, MovieDetail::class.java)
-                detail.postId = post.postId
-                movieRepo.save(detail)
-            }
-            "drama" -> {
-                val detail = objectMapper.convertValue(request.detail, DramaDetail::class.java)
-                detail.postId = post.postId
-                dramaRepo.save(detail)
-            }
-            "animation" -> {
-                val detail = objectMapper.convertValue(request.detail, AnimationDetail::class.java)
-                detail.postId = post.postId
-                animationRepo.save(detail)
-            }
-        }
+        saveDetailByCategory(request.category, request.detail, post.postId)
 
-        return PostResponseDto(
-            postId = post.postId,
-            title = post.title,
-            content = post.content,
-            imageUrl = post.imageUrl,
-            category = post.category,
-            rating = post.rating,
-            createdAt = post.createdAt.toString(),
-            updatedAt = post.updatedAt.toString(),
-            detail = request.detail
-        )
+        return toResponseDto(post, request.detail)
     }
 
     // ✅ 게시글 단건 조회
@@ -75,14 +44,117 @@ class PostService(
         val post = postRepository.findById(postId)
             .orElseThrow { IllegalArgumentException("Post not found with id: $postId") }
 
-        val detail: Any? = when (post.category) {
-            "book" -> bookRepo.findById(post.postId).orElse(null)
-            "movie" -> movieRepo.findById(post.postId).orElse(null)
-            "drama" -> dramaRepo.findById(post.postId).orElse(null)
-            "animation" -> animationRepo.findById(post.postId).orElse(null)
-            else -> null
+        val detail = findDetailByCategory(post.category, post.postId)
+        return toResponseDto(post, detail)
+    }
+
+    // ✅ 게시글 수정
+    @Transactional
+    fun updatePost(postId: Long, request: PostRequestDto): PostResponseDto {
+        val post = postRepository.findById(postId)
+            .orElseThrow { IllegalArgumentException("Post not found with id: $postId") }
+
+        post.apply {
+            title = request.title
+            content = request.content
+            imageUrl = request.imageUrl
+            rating = request.rating
+            category = request.category
+            updatedAt = LocalDateTime.now()
         }
 
+        postRepository.save(post)
+        updateDetailByCategory(request.category, request.detail, postId)
+
+        val detail = findDetailByCategory(request.category, postId)
+        return toResponseDto(post, detail)
+    }
+
+    // ✅ 게시글 삭제
+    @Transactional
+    fun deletePost(postId: Long) {
+        val post = postRepository.findById(postId)
+            .orElseThrow { IllegalArgumentException("Post not found with id: $postId") }
+
+        deleteDetailByCategory(post.category, postId)
+        postRepository.delete(post)
+    }
+
+    // ✅ 전체 게시글 목록
+    @Transactional(readOnly = true)
+    fun findAll(): List<PostResponseDto> {
+        return postRepository.findAll()
+            .map { toResponseDto(it, null) }
+    }
+
+    // ✅ 카테고리별 게시글 목록
+    @Transactional(readOnly = true)
+    fun findByCategory(category: String): List<PostResponseDto> {
+        return postRepository.findByCategory(category)
+            .map { toResponseDto(it, null) }
+    }
+
+    // -------------------------------
+    // 📦 아래는 내부 헬퍼 메서드 영역
+    // -------------------------------
+
+    /** 카테고리별 상세 저장 (create) */
+    private fun saveDetailByCategory(category: String, detail: Any?, postId: Long) {
+        if (detail == null) return
+        when (category) {
+            "book" -> bookRepo.save(objectMapper.convertValue(detail, BookDetail::class.java).apply { this.postId = postId })
+            "movie" -> movieRepo.save(objectMapper.convertValue(detail, MovieDetail::class.java).apply { this.postId = postId })
+            "drama" -> dramaRepo.save(objectMapper.convertValue(detail, DramaDetail::class.java).apply { this.postId = postId })
+            "animation" -> animationRepo.save(objectMapper.convertValue(detail, AnimationDetail::class.java).apply { this.postId = postId })
+        }
+    }
+
+    /** 카테고리별 상세 수정 (update) */
+    private fun updateDetailByCategory(category: String, detail: Any?, postId: Long) {
+        if (detail == null) return
+        when (category) {
+            "book" -> {
+                val updated = objectMapper.convertValue(detail, BookDetail::class.java).apply { this.postId = postId }
+                bookRepo.save(updated)
+            }
+            "movie" -> {
+                val updated = objectMapper.convertValue(detail, MovieDetail::class.java).apply { this.postId = postId }
+                movieRepo.save(updated)
+            }
+            "drama" -> {
+                val updated = objectMapper.convertValue(detail, DramaDetail::class.java).apply { this.postId = postId }
+                dramaRepo.save(updated)
+            }
+            "animation" -> {
+                val updated = objectMapper.convertValue(detail, AnimationDetail::class.java).apply { this.postId = postId }
+                animationRepo.save(updated)
+            }
+        }
+    }
+
+    /** 카테고리별 상세 조회 */
+    private fun findDetailByCategory(category: String, postId: Long): Any? {
+        return when (category) {
+            "book" -> bookRepo.findById(postId).orElse(null)
+            "movie" -> movieRepo.findById(postId).orElse(null)
+            "drama" -> dramaRepo.findById(postId).orElse(null)
+            "animation" -> animationRepo.findById(postId).orElse(null)
+            else -> null
+        }
+    }
+
+    /** 카테고리별 상세 삭제 */
+    private fun deleteDetailByCategory(category: String, postId: Long) {
+        when (category) {
+            "book" -> bookRepo.deleteById(postId)
+            "movie" -> movieRepo.deleteById(postId)
+            "drama" -> dramaRepo.deleteById(postId)
+            "animation" -> animationRepo.deleteById(postId)
+        }
+    }
+
+    /** 공통 DTO 변환 */
+    private fun toResponseDto(post: Post, detail: Any?): PostResponseDto {
         return PostResponseDto(
             postId = post.postId,
             title = post.title,
@@ -94,133 +166,5 @@ class PostService(
             updatedAt = post.updatedAt.toString(),
             detail = detail
         )
-    }
-
-    // ✅ 게시글 수정
-    @Transactional
-    fun updatePost(postId: Long, request: PostRequestDto): PostResponseDto {
-        val post = postRepository.findById(postId)
-            .orElseThrow { IllegalArgumentException("Post not found with id: $postId") }
-
-        post.title = request.title
-        post.content = request.content
-        post.imageUrl = request.imageUrl
-        post.rating = request.rating
-        post.category = request.category
-
-        postRepository.save(post)
-
-        // 카테고리별 상세정보 수정
-        when (request.category) {
-            "book" -> {
-                val existing = bookRepo.findById(postId).orElse(null)
-                val updated = objectMapper.convertValue(request.detail, BookDetail::class.java)
-                if (existing != null) {
-                    existing.author = updated.author
-                    existing.publisher = updated.publisher
-                    existing.readStartDate = updated.readStartDate
-                    existing.readEndDate = updated.readEndDate
-                    bookRepo.save(existing)
-                } else {
-                    updated.postId = postId
-                    bookRepo.save(updated)
-                }
-            }
-            "movie" -> {
-                val existing = movieRepo.findById(postId).orElse(null)
-                val updated = objectMapper.convertValue(request.detail, MovieDetail::class.java)
-                if (existing != null) {
-                    existing.director = updated.director
-                    existing.releaseDate = updated.releaseDate
-                    existing.runningTime = updated.runningTime
-                    movieRepo.save(existing)
-                } else {
-                    updated.postId = postId
-                    movieRepo.save(updated)
-                }
-            }
-            "drama" -> {
-                val existing = dramaRepo.findById(postId).orElse(null)
-                val updated = objectMapper.convertValue(request.detail, DramaDetail::class.java)
-                if (existing != null) {
-                    existing.broadcastNetwork = updated.broadcastNetwork
-                    existing.startDate = updated.startDate
-                    existing.endDate = updated.endDate
-                    dramaRepo.save(existing)
-                } else {
-                    updated.postId = postId
-                    dramaRepo.save(updated)
-                }
-            }
-            "animation" -> {
-                val existing = animationRepo.findById(postId).orElse(null)
-                val updated = objectMapper.convertValue(request.detail, AnimationDetail::class.java)
-                if (existing != null) {
-                    existing.studio = updated.studio
-                    existing.episodes = updated.episodes
-                    existing.releaseDate = updated.releaseDate
-                    animationRepo.save(existing)
-                } else {
-                    updated.postId = postId
-                    animationRepo.save(updated)
-                }
-            }
-        }
-
-        return getPostById(postId)
-    }
-
-    // ✅ 게시글 삭제
-    @Transactional
-    fun deletePost(postId: Long) {
-        val post = postRepository.findById(postId)
-            .orElseThrow { IllegalArgumentException("Post not found with id: $postId") }
-
-        when (post.category) {
-            "book" -> bookRepo.deleteById(postId)
-            "movie" -> movieRepo.deleteById(postId)
-            "drama" -> dramaRepo.deleteById(postId)
-            "animation" -> animationRepo.deleteById(postId)
-        }
-
-        postRepository.delete(post)
-    }
-
-    // ✅ 전체 게시글 목록
-    @Transactional(readOnly = true)
-    fun findAll(): List<PostResponseDto> {
-        return postRepository.findAll()
-            .map {
-                PostResponseDto(
-                    postId = it.postId,
-                    title = it.title,
-                    content = it.content,
-                    imageUrl = it.imageUrl,
-                    category = it.category,
-                    rating = it.rating,
-                    createdAt = it.createdAt.toString(),
-                    updatedAt = it.updatedAt.toString(),
-                    detail = null // 목록에서는 상세 생략
-                )
-            }
-    }
-
-    // ✅ 카테고리별 게시글 목록
-    @Transactional(readOnly = true)
-    fun findByCategory(category: String): List<PostResponseDto> {
-        return postRepository.findByCategory(category)
-            .map {
-                PostResponseDto(
-                    postId = it.postId,
-                    title = it.title,
-                    content = it.content,
-                    imageUrl = it.imageUrl,
-                    category = it.category,
-                    rating = it.rating,
-                    createdAt = it.createdAt.toString(),
-                    updatedAt = it.updatedAt.toString(),
-                    detail = null
-                )
-            }
     }
 }
