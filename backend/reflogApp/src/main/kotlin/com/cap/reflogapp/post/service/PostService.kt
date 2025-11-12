@@ -18,9 +18,9 @@ class PostService(
     private val objectMapper: ObjectMapper
 ) {
 
+    // ✅ 게시글 생성
     @Transactional
     fun createPost(request: PostRequestDto): PostResponseDto {
-        // 공통 post 데이터 저장
         val post = postRepository.save(
             Post(
                 userId = request.userId,
@@ -32,31 +32,30 @@ class PostService(
             )
         )
 
-        // 카테고리별 detail 저장
+        // 카테고리별 상세 저장
         when (request.category) {
             "book" -> {
-                val detailObj = objectMapper.convertValue(request.detail, BookDetail::class.java)
-                detailObj.postId = post.postId
-                bookRepo.save(detailObj)
+                val detail = objectMapper.convertValue(request.detail, BookDetail::class.java)
+                detail.postId = post.postId
+                bookRepo.save(detail)
             }
             "movie" -> {
-                val detailObj = objectMapper.convertValue(request.detail, MovieDetail::class.java)
-                detailObj.postId = post.postId
-                movieRepo.save(detailObj)
+                val detail = objectMapper.convertValue(request.detail, MovieDetail::class.java)
+                detail.postId = post.postId
+                movieRepo.save(detail)
             }
             "drama" -> {
-                val detailObj = objectMapper.convertValue(request.detail, DramaDetail::class.java)
-                detailObj.postId = post.postId
-                dramaRepo.save(detailObj)
+                val detail = objectMapper.convertValue(request.detail, DramaDetail::class.java)
+                detail.postId = post.postId
+                dramaRepo.save(detail)
             }
             "animation" -> {
-                val detailObj = objectMapper.convertValue(request.detail, AnimationDetail::class.java)
-                detailObj.postId = post.postId
-                animationRepo.save(detailObj)
+                val detail = objectMapper.convertValue(request.detail, AnimationDetail::class.java)
+                detail.postId = post.postId
+                animationRepo.save(detail)
             }
         }
 
-        // 3️⃣ 응답 DTO로 반환
         return PostResponseDto(
             postId = post.postId,
             title = post.title,
@@ -69,7 +68,8 @@ class PostService(
             detail = request.detail
         )
     }
-    //Read
+
+    // ✅ 게시글 단건 조회
     @Transactional(readOnly = true)
     fun getPostById(postId: Long): PostResponseDto {
         val post = postRepository.findById(postId)
@@ -96,14 +96,12 @@ class PostService(
         )
     }
 
-    //수정
+    // ✅ 게시글 수정
     @Transactional
     fun updatePost(postId: Long, request: PostRequestDto): PostResponseDto {
-        // 1️⃣ 기존 게시글 찾기
         val post = postRepository.findById(postId)
             .orElseThrow { IllegalArgumentException("Post not found with id: $postId") }
 
-        // 2️⃣ 기본 정보 업데이트
         post.title = request.title
         post.content = request.content
         post.imageUrl = request.imageUrl
@@ -112,7 +110,7 @@ class PostService(
 
         postRepository.save(post)
 
-        // 3️⃣ 카테고리별 상세정보 수정
+        // 카테고리별 상세정보 수정
         when (request.category) {
             "book" -> {
                 val existing = bookRepo.findById(postId).orElse(null)
@@ -128,7 +126,6 @@ class PostService(
                     bookRepo.save(updated)
                 }
             }
-
             "movie" -> {
                 val existing = movieRepo.findById(postId).orElse(null)
                 val updated = objectMapper.convertValue(request.detail, MovieDetail::class.java)
@@ -142,7 +139,6 @@ class PostService(
                     movieRepo.save(updated)
                 }
             }
-
             "drama" -> {
                 val existing = dramaRepo.findById(postId).orElse(null)
                 val updated = objectMapper.convertValue(request.detail, DramaDetail::class.java)
@@ -156,7 +152,6 @@ class PostService(
                     dramaRepo.save(updated)
                 }
             }
-
             "animation" -> {
                 val existing = animationRepo.findById(postId).orElse(null)
                 val updated = objectMapper.convertValue(request.detail, AnimationDetail::class.java)
@@ -172,17 +167,15 @@ class PostService(
             }
         }
 
-        // 최종 결과 리턴
         return getPostById(postId)
     }
 
-    //삭제
+    // ✅ 게시글 삭제
     @Transactional
     fun deletePost(postId: Long) {
         val post = postRepository.findById(postId)
             .orElseThrow { IllegalArgumentException("Post not found with id: $postId") }
 
-        // 카테고리별 상세 데이터 삭제
         when (post.category) {
             "book" -> bookRepo.deleteById(postId)
             "movie" -> movieRepo.deleteById(postId)
@@ -190,8 +183,44 @@ class PostService(
             "animation" -> animationRepo.deleteById(postId)
         }
 
-        // 메인 게시글 삭제
         postRepository.delete(post)
     }
 
+    // ✅ 전체 게시글 목록
+    @Transactional(readOnly = true)
+    fun findAll(): List<PostResponseDto> {
+        return postRepository.findAll()
+            .map {
+                PostResponseDto(
+                    postId = it.postId,
+                    title = it.title,
+                    content = it.content,
+                    imageUrl = it.imageUrl,
+                    category = it.category,
+                    rating = it.rating,
+                    createdAt = it.createdAt.toString(),
+                    updatedAt = it.updatedAt.toString(),
+                    detail = null // 목록에서는 상세 생략
+                )
+            }
+    }
+
+    // ✅ 카테고리별 게시글 목록
+    @Transactional(readOnly = true)
+    fun findByCategory(category: String): List<PostResponseDto> {
+        return postRepository.findByCategory(category)
+            .map {
+                PostResponseDto(
+                    postId = it.postId,
+                    title = it.title,
+                    content = it.content,
+                    imageUrl = it.imageUrl,
+                    category = it.category,
+                    rating = it.rating,
+                    createdAt = it.createdAt.toString(),
+                    updatedAt = it.updatedAt.toString(),
+                    detail = null
+                )
+            }
+    }
 }
