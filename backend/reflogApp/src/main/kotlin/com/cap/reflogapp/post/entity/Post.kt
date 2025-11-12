@@ -24,14 +24,19 @@ class Post(
     var imageUrl: String? = null,
 
     @Column(nullable = false)
-    var category: String, // "book", "movie", "drama", "animation"
+    var category: String,
 
     @Column
     var rating: Double? = null,
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
     @Column(name = "updated_at")
     var updatedAt: LocalDateTime = LocalDateTime.now()
-)
+) {
+    @PreUpdate
+    fun onUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
+}

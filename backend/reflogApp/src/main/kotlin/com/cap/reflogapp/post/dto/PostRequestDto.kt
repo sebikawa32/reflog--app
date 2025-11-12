@@ -4,7 +4,7 @@ data class PostRequestDto(
     val userId: Long,
     val title: String,
     val content: String,
-    val imageUrl: String?,
+    val imageUrl: String? = null,
     val category: String,
     val rating: Double?,
     val detail: Any? = null // 카테고리별 상세 데이터

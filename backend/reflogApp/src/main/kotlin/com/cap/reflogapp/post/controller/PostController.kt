@@ -24,7 +24,10 @@ class PostController(
     }
 
     @PutMapping("/{postId}")
-    fun updatePost(@PathVariable postId: Long, @RequestBody request: PostRequestDto): PostResponseDto {
+    fun updatePost(
+        @PathVariable postId: Long,
+        @RequestBody request: PostRequestDto
+    ): PostResponseDto {
         return postService.updatePost(postId, request)
     }
 
@@ -34,4 +37,16 @@ class PostController(
         return "Post with id $postId has been deleted successfully."
     }
 
+    // 전체 목록 + 카테고리별 목록 조회
+    @GetMapping
+    fun getPosts(
+        @RequestParam(required = false) category: String?
+    ): ResponseEntity<List<PostResponseDto>> {
+        val posts = if (category != null) {
+            postService.findByCategory(category)
+        } else {
+            postService.findAll()
+        }
+        return ResponseEntity.ok(posts)
+    }
 }
