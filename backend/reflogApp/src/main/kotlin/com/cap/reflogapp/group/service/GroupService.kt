@@ -26,12 +26,14 @@ class GroupService(
         return groupInfoRepository.save(group)
     }
 
-    // ✅ 모든 그룹 조회
+    // ✅ 모든 그룹 조회 (읽기 전용 트랜잭션 추가)
+    @Transactional(Transactional.TxType.SUPPORTS)
     fun getAllGroups(): List<GroupInfo> {
         return groupInfoRepository.findAll()
     }
 
-    // ✅ 특정 그룹 상세 조회
+    // ✅ 특정 그룹 상세 조회 (읽기 전용 트랜잭션 추가)
+    @Transactional(Transactional.TxType.SUPPORTS)
     fun getGroupById(groupId: Long): GroupInfo {
         return groupInfoRepository.findById(groupId)
             .orElseThrow { IllegalArgumentException("그룹을 찾을 수 없습니다.") }
@@ -51,19 +53,20 @@ class GroupService(
     @Transactional
     fun leaveGroup(group: GroupInfo, user: User) {
         val member = groupMemberRepository.findByGroup(group)
-            .find { it.user.userId == user.userId }
+            .find { it.user.id == user.id }
             ?: throw IllegalArgumentException("가입된 사용자가 아닙니다.")
         groupMemberRepository.delete(member)
     }
 
-    // ✅ 특정 그룹의 멤버 목록 조회
+    // ✅ 특정 그룹의 멤버 목록 조회 (읽기 전용)
+    @Transactional(Transactional.TxType.SUPPORTS)
     fun getMembers(group: GroupInfo): List<GroupMemberDto> {
         return groupMemberRepository.findByGroup(group)
             .map { member ->
                 GroupMemberDto(
                     id = member.id,
                     groupId = member.group.id,
-                    userId = member.user.userId,
+                    userId = member.user.id,
                     joinedAt = member.joinedAt.toString()
                 )
             }

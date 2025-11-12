@@ -20,6 +20,14 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        val path = request.requestURI
+
+        // 🆘[추가] 그룹 관련 요청은 JWT 검증 스킵 (테스트용)
+        if (path.startsWith("/api/groups")) {
+            filterChain.doFilter(request, response)
+            return
+        }
+
         val token = resolveToken(request)
 
         if (token != null && jwtTokenProvider.validateToken(token)) {

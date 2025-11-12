@@ -18,7 +18,7 @@ class GroupController(
     fun createGroup(@RequestBody request: Map<String, String>): ResponseEntity<GroupInfo> {
         val groupName = request["groupName"] ?: throw IllegalArgumentException("groupName 필요")
         val description = request["description"]
-        val leader = User(userId = request["leaderId"]?.toLong() ?: 1L) // ⚠️ 임시 (유저 기능 완성 전)
+        val leader = User(id = request["leaderId"]?.toLong() ?: 1L, email = "", password = "", nickname = "") // ✅ 수정
         val created = groupService.createGroup(groupName, description, leader)
         return ResponseEntity.ok(created)
     }
@@ -37,19 +37,30 @@ class GroupController(
 
     // ✅ 그룹 가입
     @PostMapping("/{groupId}/join")
-    fun joinGroup(@PathVariable groupId: Long, @RequestBody body: Map<String, String>): ResponseEntity<GroupMemberDto> {
+    fun joinGroup(
+        @PathVariable groupId: Long,
+        @RequestBody body: Map<String, String>
+    ): ResponseEntity<GroupMemberDto> {
         val group = groupService.getGroupById(groupId)
-        val user = User(userId = body["userId"]?.toLong() ?: 1L)
+        val user = User(id = body["userId"]?.toLong() ?: 1L, email = "", password = "", nickname = "") // ✅ 수정
         val member = groupService.joinGroup(group, user)
-        val dto = GroupMemberDto(member.id, group.id, user.userId, member.joinedAt.toString())
+        val dto = GroupMemberDto(
+            id = member.id,
+            groupId = group.id,
+            userId = user.id, // ✅ 수정
+            joinedAt = member.joinedAt.toString()
+        )
         return ResponseEntity.ok(dto)
     }
 
     // ✅ 그룹 탈퇴
     @DeleteMapping("/{groupId}/leave")
-    fun leaveGroup(@PathVariable groupId: Long, @RequestBody body: Map<String, String>): ResponseEntity<String> {
+    fun leaveGroup(
+        @PathVariable groupId: Long,
+        @RequestBody body: Map<String, String>
+    ): ResponseEntity<String> {
         val group = groupService.getGroupById(groupId)
-        val user = User(userId = body["userId"]?.toLong() ?: 1L)
+        val user = User(id = body["userId"]?.toLong() ?: 1L, email = "", password = "", nickname = "") // ✅ 수정
         groupService.leaveGroup(group, user)
         return ResponseEntity.ok("그룹 탈퇴 완료")
     }

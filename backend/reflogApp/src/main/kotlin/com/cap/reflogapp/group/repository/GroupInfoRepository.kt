@@ -10,6 +10,6 @@ interface GroupInfoRepository : JpaRepository<GroupInfo, Long> {
     // 그룹 이름으로 검색
     fun findByGroupNameContainingIgnoreCase(keyword: String): List<GroupInfo>
 
-    // 특정 유저가 리더인 그룹 찾기
-    fun findByLeader_UserId(userId: Long): List<GroupInfo>
+    // 특정 유저가 리더인 그룹 찾기 (수정됨)
+    fun findByLeader_Id(id: Long): List<GroupInfo>   // ✅ 수정 완료
 }
