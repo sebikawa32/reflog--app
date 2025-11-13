@@ -22,6 +22,7 @@ class SecurityConfig {
                     // ✅ 인증 없이 접근 가능한 경로들
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/groups/**").permitAll()  // 🆘 그룹 API 전체 허용 (테스트용) 추후 수정
+                    .requestMatchers("/api/posts/**").permitAll()
                     .anyRequest().authenticated() // 그 외는 인증 필요
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
