@@ -22,8 +22,8 @@ class JwtAuthFilter(
     ) {
         val path = request.requestURI
 
-        // 🆘[추가] 그룹 관련 요청은 JWT 검증 스킵 (테스트용)
-        if (path.startsWith("/api/groups")) {
+        // ✅ JWT 검증을 제외할 경로들 (회원가입, 로그인, 그룹 관련)
+        if (path.startsWith("/api/auth") || path.startsWith("/api/groups")) {
             filterChain.doFilter(request, response)
             return
         }
@@ -32,20 +32,23 @@ class JwtAuthFilter(
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             val email = jwtTokenProvider.getUserEmail(token)
+            val userId = jwtTokenProvider.getUserId(token) // ✅ userId 추출
 
             // ✅ SecurityContext에 인증 객체 등록
             val principal = User(email, "", emptyList())
             val authentication = UsernamePasswordAuthenticationToken(principal, null, emptyList())
             authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
-
             SecurityContextHolder.getContext().authentication = authentication
+
+            // ✅ Controller에서 쓸 수 있도록 userId 전달
+            request.setAttribute("userId", userId)
         }
 
-        // 다음 필터로 전달
+        // ✅ 다음 필터로 전달
         filterChain.doFilter(request, response)
     }
 
-    // ✅ 헤더에서 토큰 추출
+    // ✅ Authorization 헤더에서 Bearer 토큰 추출
     private fun resolveToken(request: HttpServletRequest): String? {
         val bearerToken = request.getHeader("Authorization")
         return if (bearerToken != null && bearerToken.startsWith("Bearer ")) {

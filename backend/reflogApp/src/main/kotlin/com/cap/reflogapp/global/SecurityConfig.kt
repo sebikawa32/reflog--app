@@ -23,6 +23,7 @@ class SecurityConfig {
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/groups/**").permitAll()  // 🆘 그룹 API 전체 허용 (테스트용) 추후 수정
                     .requestMatchers("/api/posts/**").permitAll()
+                    .requestMatchers("/api/follow/**").permitAll()  // 🆘 팔로우 API 전체 허용 (테스트용) 추후 수정
                     .anyRequest().authenticated() // 그 외는 인증 필요
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
