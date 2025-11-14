@@ -2,14 +2,15 @@ package com.cap.reflogapp.group.entity
 
 import com.cap.reflogapp.user.entity.User
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "group_info")
-// ✅ Hibernate Lazy 로딩 프록시 직렬화 오류 방지
 @JsonIgnoreProperties(value = ["hibernateLazyInitializer", "handler"])
 data class GroupInfo(
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -21,12 +22,16 @@ data class GroupInfo(
     @Column(name = "description")
     var description: String? = null,
 
-    // ✅ Lazy 로딩된 User 엔티티 직렬화 오류 방지
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id")
     @JsonIgnoreProperties(value = ["hibernateLazyInitializer", "handler"])
-    var leader: User, // FK → users.user_id
+    var leader: User,
 
     @Column(name = "created_at")
-    var createdAt: LocalDateTime = LocalDateTime.now()
+    var createdAt: LocalDateTime = LocalDateTime.now(),
+
+    // ⭐ 추가된 부분: 그룹 멤버 목록
+    @OneToMany(mappedBy = "group", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference
+    var members: MutableList<GroupMember> = mutableListOf()
 )

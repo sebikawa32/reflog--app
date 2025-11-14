@@ -13,13 +13,22 @@ class GroupController(
     private val groupService: GroupService
 ) {
 
-    // ✅ 그룹 생성
+    // ✅ 그룹 생성 + 자동 멤버 가입
     @PostMapping("/create")
     fun createGroup(@RequestBody request: Map<String, String>): ResponseEntity<GroupInfo> {
         val groupName = request["groupName"] ?: throw IllegalArgumentException("groupName 필요")
         val description = request["description"]
-        val leader = User(id = request["leaderId"]?.toLong() ?: 1L, email = "", password = "", nickname = "") // ✅ 수정
+        val leaderId = request["leaderId"]?.toLong()
+            ?: throw IllegalArgumentException("leaderId 필요")
+
+        val leader = User(id = leaderId, email = "", password = "", nickname = "")
+
+        // 1) 그룹 생성
         val created = groupService.createGroup(groupName, description, leader)
+
+        // 2) 생성자를 자동으로 멤버로 가입
+        groupService.joinGroup(created, leader)
+
         return ResponseEntity.ok(created)
     }
 
@@ -41,15 +50,22 @@ class GroupController(
         @PathVariable groupId: Long,
         @RequestBody body: Map<String, String>
     ): ResponseEntity<GroupMemberDto> {
+
+        val userId = body["userId"]?.toLong()
+            ?: throw IllegalArgumentException("userId 필요")
+
         val group = groupService.getGroupById(groupId)
-        val user = User(id = body["userId"]?.toLong() ?: 1L, email = "", password = "", nickname = "") // ✅ 수정
+        val user = User(id = userId, email = "", password = "", nickname = "")
+
         val member = groupService.joinGroup(group, user)
+
         val dto = GroupMemberDto(
             id = member.id,
             groupId = group.id,
-            userId = user.id, // ✅ 수정
+            userId = user.id,
             joinedAt = member.joinedAt.toString()
         )
+
         return ResponseEntity.ok(dto)
     }
 
@@ -59,9 +75,15 @@ class GroupController(
         @PathVariable groupId: Long,
         @RequestBody body: Map<String, String>
     ): ResponseEntity<String> {
+
+        val userId = body["userId"]?.toLong()
+            ?: throw IllegalArgumentException("userId 필요")
+
         val group = groupService.getGroupById(groupId)
-        val user = User(id = body["userId"]?.toLong() ?: 1L, email = "", password = "", nickname = "") // ✅ 수정
+        val user = User(id = userId, email = "", password = "", nickname = "")
+
         groupService.leaveGroup(group, user)
+
         return ResponseEntity.ok("그룹 탈퇴 완료")
     }
 }
