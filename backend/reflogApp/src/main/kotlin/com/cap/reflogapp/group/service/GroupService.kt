@@ -15,7 +15,7 @@ class GroupService(
     private val groupMemberRepository: GroupMemberRepository
 ) {
 
-    // ✅ 그룹 생성
+    //  그룹 생성
     @Transactional
     fun createGroup(groupName: String, description: String?, leader: User): GroupInfo {
         val group = GroupInfo(
@@ -26,20 +26,20 @@ class GroupService(
         return groupInfoRepository.save(group)
     }
 
-    // ✅ 모든 그룹 조회 (읽기 전용 트랜잭션 추가)
+    //  모든 그룹 조회 (읽기 전용 트랜잭션 추가)
     @Transactional(Transactional.TxType.SUPPORTS)
     fun getAllGroups(): List<GroupInfo> {
         return groupInfoRepository.findAll()
     }
 
-    // ✅ 특정 그룹 상세 조회 (읽기 전용 트랜잭션 추가)
+    //  특정 그룹 상세 조회 (읽기 전용 트랜잭션 추가)
     @Transactional(Transactional.TxType.SUPPORTS)
     fun getGroupById(groupId: Long): GroupInfo {
         return groupInfoRepository.findById(groupId)
             .orElseThrow { IllegalArgumentException("그룹을 찾을 수 없습니다.") }
     }
 
-    // ✅ 그룹 가입
+    //  그룹 가입
     @Transactional
     fun joinGroup(group: GroupInfo, user: User): GroupMember {
         if (groupMemberRepository.existsByGroupAndUser(group, user)) {
@@ -49,7 +49,7 @@ class GroupService(
         return groupMemberRepository.save(member)
     }
 
-    // ✅ 그룹 탈퇴
+    //  그룹 탈퇴
     @Transactional
     fun leaveGroup(group: GroupInfo, user: User) {
         val member = groupMemberRepository.findByGroup(group)
@@ -58,7 +58,7 @@ class GroupService(
         groupMemberRepository.delete(member)
     }
 
-    // ✅ 특정 그룹의 멤버 목록 조회 (읽기 전용)
+    //  특정 그룹의 멤버 목록 조회 (읽기 전용)
     @Transactional(Transactional.TxType.SUPPORTS)
     fun getMembers(group: GroupInfo): List<GroupMemberDto> {
         return groupMemberRepository.findByGroup(group)

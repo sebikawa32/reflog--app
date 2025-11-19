@@ -13,7 +13,7 @@ class GroupController(
     private val groupService: GroupService
 ) {
 
-    // ✅ 그룹 생성 + 자동 멤버 가입
+    //  그룹 생성 + 자동 멤버 가입
     @PostMapping("/create")
     fun createGroup(@RequestBody request: Map<String, String>): ResponseEntity<GroupInfo> {
         val groupName = request["groupName"] ?: throw IllegalArgumentException("groupName 필요")
@@ -32,19 +32,19 @@ class GroupController(
         return ResponseEntity.ok(created)
     }
 
-    // ✅ 전체 그룹 조회
+    //  전체 그룹 조회
     @GetMapping
     fun getAllGroups(): ResponseEntity<List<GroupInfo>> {
         return ResponseEntity.ok(groupService.getAllGroups())
     }
 
-    // ✅ 특정 그룹 상세 조회
+    //  특정 그룹 상세 조회
     @GetMapping("/{groupId}")
     fun getGroup(@PathVariable groupId: Long): ResponseEntity<GroupInfo> {
         return ResponseEntity.ok(groupService.getGroupById(groupId))
     }
 
-    // ✅ 그룹 가입
+    //  그룹 가입
     @PostMapping("/{groupId}/join")
     fun joinGroup(
         @PathVariable groupId: Long,
@@ -69,7 +69,7 @@ class GroupController(
         return ResponseEntity.ok(dto)
     }
 
-    // ✅ 그룹 탈퇴
+    //  그룹 탈퇴
     @DeleteMapping("/{groupId}/leave")
     fun leaveGroup(
         @PathVariable groupId: Long,
