@@ -1,24 +1,38 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, FlatList, ActivityIndicator } from "react-native";
+import { fetchFollowingFeed } from "../api/feedApi";
+import FeedCard from "../components/FeedCard";
 
 export default function FeedScreen() {
+  const [feed, setFeed] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadFeed = async () => {
+    try {
+      const data = await fetchFollowingFeed();
+      setFeed(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFeed();
+  }, []);
+
+  if (loading) {
+    return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <ActivityIndicator size="large" />
+        </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>📰 피드 화면입니다.</Text>
-    </View>
+      <FlatList
+          data={feed}
+          renderItem={({ item }) => <FeedCard item={item} />}
+          keyExtractor={(item) => item.postId.toString()}
+      />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  text: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FF7A00", // 오렌지 포인트
-  },
-});

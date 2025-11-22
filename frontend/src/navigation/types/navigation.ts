@@ -2,6 +2,7 @@ export type HomeStackParamList = {
     Home: undefined;
     ReviewList: { category: string };
     ReviewDetail: { review: any };
+    Feed: undefined;
 };
 
 export type GroupStackParamList = {
