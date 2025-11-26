@@ -12,4 +12,7 @@ interface PostRepository : JpaRepository<Post, Long> {
 
     // 피드 기능: 여러 userId의 게시글을 최신순 조회
     fun findByUserIdInOrderByCreatedAtDesc(userIds: List<Long>): List<Post>
+
+    fun findByUserId(userId: Long): List<Post>
+
 }

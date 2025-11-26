@@ -1,7 +1,8 @@
 export type HomeStackParamList = {
     Home: undefined;
-    ReviewList: { category: string };
     ReviewDetail: { review: any };
+    ReviewWrite: undefined;
+    ReviewEdit: { review: any };
     Feed: undefined;
 };
 

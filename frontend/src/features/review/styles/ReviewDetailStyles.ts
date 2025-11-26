@@ -1,125 +1,98 @@
-import { Dimensions, StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from "react-native";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 export const ReviewDetailStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fdfbf7',
+    backgroundColor: "#FFFFFF",
   },
+
   container: {
     flex: 1,
-    backgroundColor: '#fdfbf7',
+    backgroundColor: "#FFFFFF",
     padding: 20,
   },
+
+  /* --- 표지 이미지 --- */
   coverWrapper: {
-    position: 'relative',
-    alignItems: 'center',
-    marginBottom: 25,
+    position: "relative",
+    alignItems: "center",
+    marginBottom: 28,
   },
   coverImage: {
-    width: width * 0.85,
+    width: width * 0.86,
     height: 260,
-    borderRadius: 16,
-    resizeMode: 'cover',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 14,
+    resizeMode: "cover",
   },
   overlay: {
-    position: 'absolute',
-    width: width * 0.85,
+    position: "absolute",
+    width: width * 0.86,
     height: 260,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.08)",
   },
+
+  /* --- 제목 --- */
   title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#3b3025',
-    textAlign: 'center',
-    marginBottom: 8,
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#2F2F2F",
+    textAlign: "center",
+    marginBottom: 6,
   },
   titleDivider: {
     width: 60,
     height: 3,
-    backgroundColor: '#c8a97e',
-    alignSelf: 'center',
+    backgroundColor: "#FF7A00",
+    alignSelf: "center",
     borderRadius: 3,
     marginVertical: 12,
   },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 25,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
-  },
+
+  /* --- 메타 / 카테고리 / 상세 정보 --- */
   meta: {
     fontSize: 15,
-    color: '#5a4a3c',
-    marginBottom: 4,
+    color: "#3A332D",        // ⭐ 통일된 글씨색
+    marginBottom: 6,
   },
-  date: {
-    fontSize: 13,
-    color: '#9d8b7a',
-    marginTop: 5,
-  },
+
+  /* --- 별점 --- */
   ratingContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  ratingLabel: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#6b5a46',
-    marginTop: 4,
+    alignItems: "center",
+    marginBottom: 8,
   },
   stars: {
-    flexDirection: 'row',
+    flexDirection: "row",
+    marginBottom: 4,
   },
   star: {
     fontSize: 30,
-    color: '#d8cfc3',
+    color: "#E0D7CF",
     marginHorizontal: 3,
   },
   activeStar: {
-    color: '#f2c94c',
+    color: "#FFAA3B",
   },
   selectedStar: {
-    textShadowColor: '#f5d67a',
+    textShadowColor: "#FFDCA7",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 6,
   },
+  ratingLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#5A5148",        // ⭐ 부드럽게 보이는 서브톤
+  },
+
+  /* --- 본문 (내 설명) --- */
   content: {
     fontSize: 16,
-    color: '#3e352c',
-    lineHeight: 27,
-    marginBottom: 25,
-    paddingHorizontal: 5,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  actionButton: {
-    borderRadius: 25,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    backgroundColor: '#c8a97e',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  buttonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#fffaf2',
+    color: "#3A332D",        // ⭐ 메타랑 같은 톤으로 통일
+    lineHeight: 26,
+    marginTop: 10,
+    marginBottom: 26,
+    paddingHorizontal: 4,
   },
 });

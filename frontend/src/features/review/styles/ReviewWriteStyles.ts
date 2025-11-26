@@ -3,60 +3,76 @@ import { StyleSheet } from "react-native";
 export const ReviewWriteStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FDFBF7",
+    backgroundColor: "#FFFFFF", // 기본 흰색
     padding: 20,
   },
+
   header: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#3B3025",
-    marginBottom: 20,
+    color: "#333333",
+    marginBottom: 25,
     textAlign: "center",
   },
+
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     marginBottom: 8,
-    color: "#4A4035",
+    color: "#333333",
   },
+
+  // 카테고리
   categoryGroup: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     marginBottom: 20,
   },
+
   categoryButton: {
+    flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 20,
+    marginHorizontal: 4,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#D5C7B3",
-    backgroundColor: "#FFF",
+    borderColor: "#FF8A3D", // 오렌지 포인트
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
   },
+
   categorySelected: {
-    backgroundColor: "#C8A97E",
+    backgroundColor: "#FF8A3D", // 선택 시 오렌지
+    borderColor: "#FF8A3D",
   },
+
   categoryText: {
-    fontSize: 15,
-    color: "#3B3025",
+    fontSize: 14,
+    color: "#333333",
     fontWeight: "500",
   },
+
   categoryTextSelected: {
-    color: "#FFF",
+    color: "#FFFFFF",
     fontWeight: "700",
   },
+
+  // 입력창
   input: {
     borderWidth: 1,
-    borderColor: "#D5C7B3",
-    borderRadius: 10,
+    borderColor: "#E2E2E2",
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 10,
-    backgroundColor: "#FFF",
+    marginBottom: 12,
+    backgroundColor: "#FAFAFA",
     fontSize: 14,
+    color: "#333333",
   },
+
+  // 별점
   starContainer: {
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
 });
