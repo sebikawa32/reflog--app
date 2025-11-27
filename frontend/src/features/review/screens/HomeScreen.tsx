@@ -1,14 +1,19 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
-    FlatList,
-    Image,
     SafeAreaView,
     Text,
-    TouchableOpacity,
     View,
+    FlatList,
+    Image,
+    TouchableOpacity,
 } from "react-native";
 import { HomeStyles as styles } from "../styles/HomeStyles";
+import { userApi } from "../../../api/userApi";
+import { postApi } from "../../../api/postApi";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+
+const DEFAULT_PROFILE_IMG =
+    "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
 const categoryFilters = [
     { key: "all", label: "전체" },
@@ -18,99 +23,148 @@ const categoryFilters = [
     { key: "animation", label: "애니" },
 ];
 
-const dummyFeed = [
-    {
-        id: "해리포터와 마법사의 돌",
-        category: "book",
-        content: "오늘 읽은 책은 참 따뜻했어요 ☕📘",
-        image: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-    },
-    {
-        id: "인셉션",
-        category: "movie",
-        content: "이번 영화 정말 재밌었어요 🎬🔥",
-        image: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-    },
-];
-
 const HomeScreen = () => {
     const navigation = useNavigation<any>();
+
+    // 🔥 네비게이션 상태 로그
+    console.log("[NAVIGATION STATE]", navigation.getState());
+
+    const [user, setUser] = useState<any>(null);
+    const [posts, setPosts] = useState<any[]>([]);
     const [selectedFilter, setSelectedFilter] = useState("all");
 
-    const filteredFeed =
+    const loadHome = async () => {
+        try {
+            const myInfo = await userApi.getMyInfo();
+            setUser(myInfo);
+
+            const myPosts = await postApi.getByUserId(myInfo.id);
+            setPosts(myPosts);
+
+            console.log("✔ HomeScreen 로딩 성공");
+        } catch (err) {
+            console.log("❌ HomeScreen 로딩 실패:", err);
+        }
+    };
+
+    // 화면 다시 열릴 때마다 새로고침
+    useFocusEffect(
+        useCallback(() => {
+            loadHome();
+        }, [])
+    );
+
+    if (!user) return null;
+
+    const filteredPosts =
         selectedFilter === "all"
-            ? dummyFeed
-            : dummyFeed.filter((item) => item.category === selectedFilter);
+            ? posts
+            : posts.filter((p) => p.category === selectedFilter);
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={{ flex: 1 }}>
+                {/* 🔹 프로필 */}
+                <View style={[styles.profileContainer, { elevation: 0, shadowOpacity: 0 }]}>
+                    <Image
+                        source={{ uri: user.profileImage || DEFAULT_PROFILE_IMG }}
+                        style={styles.profileImage}
+                    />
 
-            {/* 🔹 프로필 영역 */}
-            <View style={styles.profileContainer}>
-                <Image
-                    source={{
-                        uri: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-                    }}
-                    style={styles.profileImage}
-                />
+                    <Text style={styles.profileName}>{user.nickname}</Text>
 
-                <Text style={styles.profileName}>세빈</Text>
+                    <View style={styles.statsContainer}>
+                        <Text style={styles.statsText}>감상기록 {posts.length}</Text>
+                        <Text style={styles.dot}>·</Text>
+                        <Text style={styles.statsText}>팔로워 {user.followerCount}</Text>
+                        <Text style={styles.dot}>·</Text>
+                        <Text style={styles.statsText}>팔로잉 {user.followingCount}</Text>
+                    </View>
 
-                <View style={styles.statsContainer}>
-                    <Text style={styles.statsText}>감상기록 12</Text>
-                    <Text style={styles.dot}>·</Text>
-                    <Text style={styles.statsText}>팔로워 120</Text>
-                    <Text style={styles.dot}>·</Text>
-                    <Text style={styles.statsText}>팔로잉 89</Text>
+                    <Text style={styles.profileBio}>
+                        {user.introduce || "아직 소개가 없어요"}
+                    </Text>
                 </View>
 
-                <Text style={styles.profileBio}>오늘도 감상 중 ✍️</Text>
-            </View>
-
-            {/* 🔹 필터 바 */}
-            <View style={styles.filterBar}>
-                {categoryFilters.map((item) => (
-                    <TouchableOpacity
-                        key={item.key}
-                        style={[
-                            styles.filterButton,
-                            selectedFilter === item.key && styles.filterButtonActive,
-                        ]}
-                        onPress={() => setSelectedFilter(item.key)}
-                    >
-                        <Text
+                {/* 🔹 카테고리 필터 */}
+                <View style={styles.filterBar}>
+                    {categoryFilters.map((item) => (
+                        <TouchableOpacity
+                            key={item.key}
                             style={[
-                                styles.filterText,
-                                selectedFilter === item.key && styles.filterTextActive,
+                                styles.filterButton,
+                                selectedFilter === item.key && styles.filterButtonActive,
                             ]}
+                            onPress={() => {
+                                console.log("카테고리 선택:", item.key);
+                                setSelectedFilter(item.key);
+                            }}
                         >
-                            {item.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
+                            <Text
+                                style={[
+                                    styles.filterText,
+                                    selectedFilter === item.key && styles.filterTextActive,
+                                ]}
+                            >
+                                {item.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
 
-            {/* 🔹 최신 피드 리스트 */}
-            <FlatList
-                data={filteredFeed}
-                keyExtractor={(item) => item.id}
-                style={{ marginTop: 10 }}
-                renderItem={({ item }) => (
-                    <View style={styles.feedCard}>
-                        {/* 책/영화 제목 */}
-                        <Text style={styles.feedTitle}>{item.id}</Text>
+                {/* 🔹 게시글 리스트 */}
+                <FlatList
+                    style={{ flex: 1 }}
+                    data={filteredPosts}
+                    keyExtractor={(item) => item.postId.toString()}
+                    contentContainerStyle={{ paddingBottom: 120 }}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => {
+                                console.log("🔥 카드 눌림:", item.postId);
+                                navigation.push("ReviewDetail", { review: item });
+                            }}
+                        >
+                            <View style={[styles.feedCard, { elevation: 0, shadowOpacity: 0 }]}>
+                                <Text style={styles.feedTitle}>{item.title}</Text>
+                                <Text style={styles.feedContent}>{item.content}</Text>
 
-                        {/* 내용 */}
-                        <Text style={styles.feedContent}>{item.content}</Text>
+                                {item.imageUrl && (
+                                    <Image
+                                        source={{ uri: item.imageUrl }}
+                                        style={{ width: 120, height: 120, borderRadius: 8 }}
+                                    />
+                                )}
 
-                        {/* 카테고리 태그 */}
-                        <View style={styles.categoryTag}>
-                            <Text style={styles.categoryTagText}>{item.category}</Text>
+                                <View style={styles.categoryTag}>
+                                    <Text style={styles.categoryTagText}>
+                                        {item.category}
+                                    </Text>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                    ListEmptyComponent={
+                        <View style={{ paddingVertical: 40, alignItems: "center" }}>
+                            <Text style={{ fontSize: 16, color: "#888" }}>
+                                아직 작성한 게시글이 없어요
+                            </Text>
                         </View>
-                    </View>
-                )}
-            />
+                    }
+                />
 
+                {/* 🔹 플로팅 버튼 */}
+                <TouchableOpacity
+                    style={[styles.fab, { zIndex: 1 }]}
+                    onPress={() => {
+                        console.log("🔥 리뷰 작성 버튼 클릭");
+                        navigation.navigate("ReviewWrite");
+                    }}
+                >
+                    <Text style={styles.fabText}>＋</Text>
+                </TouchableOpacity>
+            </View>
         </SafeAreaView>
     );
 };

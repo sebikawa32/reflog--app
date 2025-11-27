@@ -35,7 +35,8 @@ class PostService(
 
         saveDetailByCategory(request.category, request.detail, post.postId)
 
-        return toResponseDto(post, request.detail)
+        val detail = findDetailByCategory(request.category, post.postId)
+        return toResponseDto(post, detail)
     }
 
     // ✅ 게시글 단건 조회
@@ -80,25 +81,41 @@ class PostService(
         postRepository.delete(post)
     }
 
-    // ✅ 전체 게시글 목록
+    // ✅ 전체 게시글 목록 — ⭐ 상세 포함하도록 수정
     @Transactional(readOnly = true)
     fun findAll(): List<PostResponseDto> {
         return postRepository.findAll()
-            .map { toResponseDto(it, null) }
+            .map { post ->
+                val detail = findDetailByCategory(post.category, post.postId)
+                toResponseDto(post, detail)
+            }
     }
 
-    // ✅ 카테고리별 게시글 목록
+    // ✅ 카테고리별 게시글 목록 — ⭐ 상세 포함하도록 수정
     @Transactional(readOnly = true)
     fun findByCategory(category: String): List<PostResponseDto> {
         return postRepository.findByCategory(category)
-            .map { toResponseDto(it, null) }
+            .map { post ->
+                val detail = findDetailByCategory(post.category, post.postId)
+                toResponseDto(post, detail)
+            }
     }
 
-    // -------------------------------
-    // 📦 아래는 내부 헬퍼 메서드 영역
-    // -------------------------------
+    // ⭐ 유저별 게시글 목록 — ⭐ 상세 포함하도록 수정
+    @Transactional(readOnly = true)
+    fun findByUserId(userId: Long): List<PostResponseDto> {
+        val posts = postRepository.findByUserId(userId)
+        return posts.map { post ->
+            val detail = findDetailByCategory(post.category, post.postId)
+            toResponseDto(post, detail)
+        }
+    }
 
-    /** 카테고리별 상세 저장 (create) */
+    // ========================================================
+    // 내부 헬퍼 메서드
+    // ========================================================
+
+    /** 카테고리별 상세 저장 */
     private fun saveDetailByCategory(category: String, detail: Any?, postId: Long) {
         if (detail == null) return
         when (category) {
@@ -109,26 +126,14 @@ class PostService(
         }
     }
 
-    /** 카테고리별 상세 수정 (update) */
+    /** 카테고리별 상세 수정 */
     private fun updateDetailByCategory(category: String, detail: Any?, postId: Long) {
         if (detail == null) return
         when (category) {
-            "book" -> {
-                val updated = objectMapper.convertValue(detail, BookDetail::class.java).apply { this.postId = postId }
-                bookRepo.save(updated)
-            }
-            "movie" -> {
-                val updated = objectMapper.convertValue(detail, MovieDetail::class.java).apply { this.postId = postId }
-                movieRepo.save(updated)
-            }
-            "drama" -> {
-                val updated = objectMapper.convertValue(detail, DramaDetail::class.java).apply { this.postId = postId }
-                dramaRepo.save(updated)
-            }
-            "animation" -> {
-                val updated = objectMapper.convertValue(detail, AnimationDetail::class.java).apply { this.postId = postId }
-                animationRepo.save(updated)
-            }
+            "book" -> bookRepo.save(objectMapper.convertValue(detail, BookDetail::class.java).apply { this.postId = postId })
+            "movie" -> movieRepo.save(objectMapper.convertValue(detail, MovieDetail::class.java).apply { this.postId = postId })
+            "drama" -> dramaRepo.save(objectMapper.convertValue(detail, DramaDetail::class.java).apply { this.postId = postId })
+            "animation" -> animationRepo.save(objectMapper.convertValue(detail, AnimationDetail::class.java).apply { this.postId = postId })
         }
     }
 

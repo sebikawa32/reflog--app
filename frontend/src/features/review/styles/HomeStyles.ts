@@ -18,7 +18,7 @@ export const HomeStyles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
-    elevation: 2,
+    elevation: 1,
   },
   profileImage: {
     width: 90,
@@ -112,5 +112,24 @@ export const HomeStyles = StyleSheet.create({
     fontSize: 12,
     color: "#FF7A00",
     fontWeight: "600",
+  },
+
+  fab: {
+    position: "absolute",
+    bottom: 30,
+    right: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#FF7F50",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 10,
+    zIndex: 999,
+  },
+  fabText: {
+    color: "white",
+    fontSize: 32,
+    marginTop: -3,
   },
 });
