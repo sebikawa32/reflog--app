@@ -1,11 +1,10 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GroupCreateStyles as styles } from "../styles/GroupCreateStyles";
+import axios from "axios";
 import { decode as base64_decode } from "base-64";
+import React, { useState } from "react";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { GroupCreateStyles as styles } from "../styles/GroupCreateStyles";
 
-// ⭐ env 적용
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function GroupCreateScreen({ navigation }: any) {
@@ -19,19 +18,14 @@ export default function GroupCreateScreen({ navigation }: any) {
         }
 
         const token = await AsyncStorage.getItem("accessToken");
-        if (!token) {
-            Alert.alert("오류", "로그인이 필요합니다.");
-            return;
-        }
+        if (!token) return;
 
         try {
-            // ⭐ JWT 에서 userId 꺼내기
             const payload = JSON.parse(
                 base64_decode(token.split(".")[1].padEnd(4, "="))
             );
             const userId = payload.userId;
 
-            // ⭐ 그룹 생성 요청
             await axios.post(
                 `${BASE_URL}/api/groups/create`,
                 {
@@ -45,7 +39,9 @@ export default function GroupCreateScreen({ navigation }: any) {
             );
 
             Alert.alert("성공", "그룹이 생성되었습니다.");
-            navigation.goBack();
+
+            /** ⭐ 여기에서 goBack()이 아니라 navigate()를 사용 */
+            navigation.navigate("GroupHome");
 
         } catch (e) {
             console.log("Create error:", e);
@@ -71,10 +67,7 @@ export default function GroupCreateScreen({ navigation }: any) {
                 onChangeText={setDescription}
             />
 
-            <TouchableOpacity
-                style={styles.createButton}
-                onPress={handleCreate}
-            >
+            <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
                 <Text style={styles.createButtonText}>생성하기</Text>
             </TouchableOpacity>
         </View>

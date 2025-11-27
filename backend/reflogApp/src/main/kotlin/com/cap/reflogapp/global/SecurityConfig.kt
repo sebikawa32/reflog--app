@@ -25,6 +25,13 @@ class SecurityConfig {
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/groups/**").permitAll()  // 🆘 그룹 API 전체 허용 (테스트용) 추후 수정
+                    .requestMatchers("/api/posts/**").permitAll()
+                    .requestMatchers("/api/follow/**").permitAll()  // 🆘 팔로우 API 전체 허용 (테스트용) 추후 수정
+                    .requestMatchers("/api/users/**").permitAll()  // 🆘 유저 조회 API 전체 허용 (테스트용) 추후 수정
+                    .requestMatchers("/api/group-feed/review/**").permitAll() //리뷰 조회는 공개
+
+                    .anyRequest().authenticated() // 그 외는 인증 필요
                     .requestMatchers("/api/groups/**").permitAll()
                     .requestMatchers("/api/posts/**").permitAll()     // ⭐ DELETE 포함 전체 허용
                     .requestMatchers("/api/follow/**").permitAll()

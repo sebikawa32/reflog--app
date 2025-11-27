@@ -20,35 +20,57 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val path = request.requestURI
 
-        // ✅ JWT 검증을 제외할 경로들 (회원가입, 로그인, 그룹 관련)
-        if (path.startsWith("/api/auth") || path.startsWith("/api/groups")) {
+        val path = request.requestURI
+        val method = request.method
+
+        // -----------------------------------------------------------
+        // 🔥 PUBLIC API (토큰 없이 접근 가능한 API)
+        // -----------------------------------------------------------
+        val isPublic =
+            path == "/api/auth/login" ||
+                    path == "/api/auth/join" ||
+                    (path == "/api/groups" && method == "GET") ||
+                    path.startsWith("/api/groups/search") ||
+
+                    // 🔥 리뷰 조회만 public (create/update/delete 제외)
+                    path.startsWith("/api/group-feed/review")
+
+        // ⚠️ 여기 절대 "/api/groups/not-joined" 추가하면 안 됨
+        //    추가되면 JWT를 읽지 않아서 userId가 null → 에러 발생
+
+        if (isPublic) {
             filterChain.doFilter(request, response)
             return
         }
 
+        // -----------------------------------------------------------
+        // 🔥 PRIVATE API (토큰 필수)
+        // -----------------------------------------------------------
         val token = resolveToken(request)
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            val email = jwtTokenProvider.getUserEmail(token)
-            val userId = jwtTokenProvider.getUserId(token) // ✅ userId 추출
 
-            // ✅ SecurityContext에 인증 객체 등록
+            val email = jwtTokenProvider.getUserEmail(token)
+            val userId = jwtTokenProvider.getUserId(token)
+
             val principal = User(email, "", emptyList())
-            val authentication = UsernamePasswordAuthenticationToken(principal, null, emptyList())
+            val authentication = UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                emptyList()
+            )
+
             authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
             SecurityContextHolder.getContext().authentication = authentication
 
-            // ✅ Controller에서 쓸 수 있도록 userId 전달
+            // ⭐ Controller에서 userId 바로 꺼낼 수 있음
             request.setAttribute("userId", userId)
         }
 
-        // ✅ 다음 필터로 전달
         filterChain.doFilter(request, response)
     }
 
-    // ✅ Authorization 헤더에서 Bearer 토큰 추출
     private fun resolveToken(request: HttpServletRequest): String? {
         val bearerToken = request.getHeader("Authorization")
         return if (bearerToken != null && bearerToken.startsWith("Bearer ")) {

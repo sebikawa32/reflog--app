@@ -1,8 +1,8 @@
-package com.cap.reflogapp.group.dto
-
 data class GroupMemberDto(
     val id: Long,
     val groupId: Long,
     val userId: Long,
-    val joinedAt: String
+    val nickname: String?,
+    val joinedAt: String?,
+    val status: String
 )
