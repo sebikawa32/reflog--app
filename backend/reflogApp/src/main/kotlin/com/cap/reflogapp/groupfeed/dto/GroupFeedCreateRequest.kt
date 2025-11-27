@@ -5,8 +5,8 @@ data class GroupFeedCreateRequest(
     val groupId: Long,
     val title: String,
     val category: String,
-    val contentInfo: String?,   // (책 정보, 영상 정보 등)
-    val introText: String?,     // (한줄 소개)
-    val thumbnailUrl: String?,  // 첨부 이미지 URL
-    val endDate: String         // yyyy-MM-dd (목표 날짜)
+    val contentInfo: String?,   // meta JSON
+    val introText: String?,     // content
+    val thumbnailUrl: String?,  // image_url
+    val endDate: String         // deadline (yyyy-MM-dd)
 )

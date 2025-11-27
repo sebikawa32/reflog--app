@@ -20,7 +20,7 @@ data class GroupFeed(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
-    val creator: User, // 리더
+    val creator: User,
 
     @Column(name = "title", nullable = false)
     var title: String,
@@ -29,16 +29,20 @@ data class GroupFeed(
     @Enumerated(EnumType.STRING)
     var category: FeedCategory,
 
-    @Column(name = "content_info")
+    /** meta JSONB */
+    @Column(name = "meta")
     var contentInfo: String? = null,
 
-    @Column(name = "intro_text")
+    /** DB의 content 컬럼 */
+    @Column(name = "content")
     var introText: String? = null,
 
-    @Column(name = "thumbnail_url")
+    /** DB의 image_url 컬럼 */
+    @Column(name = "image_url")
     var thumbnailUrl: String? = null,
 
-    @Column(name = "end_date", nullable = false)
+    /** DB의 deadline 컬럼 */
+    @Column(name = "deadline", nullable = false)
     var endDate: LocalDate,
 
     @Column(name = "created_at")

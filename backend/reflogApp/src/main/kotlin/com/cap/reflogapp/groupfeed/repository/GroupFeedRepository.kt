@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository
 interface GroupFeedRepository : JpaRepository<GroupFeed, Long> {
 
     fun findByGroup(group: GroupInfo): List<GroupFeed>
+
 }

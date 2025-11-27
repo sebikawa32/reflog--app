@@ -1,41 +1,49 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { decode as base64_decode } from "base-64";
 import React, { useEffect, useState } from "react";
 import {
-    View,
-    Text,
-    TouchableOpacity,
     FlatList,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { decode as base64_decode } from "base-64";
 
 import { GroupExploreStyles as styles } from "../styles/GroupExploreStyles";
 
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { GroupStackParamList } from "@/navigation/types/navigation";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-// 네비게이션 타입 정의
 type ExploreNav = NativeStackNavigationProp<
     GroupStackParamList,
     "GroupExplore"
 >;
 
-// ⭐ 환경변수 기반 (필수)
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function GroupExploreScreen() {
     const navigation = useNavigation<ExploreNav>();
+    const route = useRoute();
 
     const [userId, setUserId] = useState<number | null>(null);
-    const [groups, setGroups] = useState<any[]>([]);
     const [notJoined, setNotJoined] = useState<any[]>([]);
+    const [search, setSearch] = useState("");
 
+    // 첫 로드
     useEffect(() => {
         loadUser();
     }, []);
 
-    // 사용자 ID 로드 + group 불러오기
+    // GroupCreate → refresh 적용
+    useEffect(() => {
+        if ((route.params as any)?.refresh) {
+            loadUser();
+        }
+    }, [(route.params as any)?.refresh]);
+
+    /** 사용자 정보 로드 */
     const loadUser = async () => {
         const token = await AsyncStorage.getItem("accessToken");
         if (!token) return;
@@ -47,75 +55,106 @@ export default function GroupExploreScreen() {
 
             const uid = payload.userId;
             setUserId(uid);
-            loadGroups(uid);
+
+            loadGroups(uid, token);
 
         } catch (e) {
             console.log("JWT decode error:", e);
         }
     };
 
-    // 전체 그룹 가져와서 미가입 그룹 필터링
-    const loadGroups = async (uid: number) => {
+    /** 가입하지 않은 그룹 불러오기 */
+    const loadGroups = async (uid: number, token: string) => {
         try {
-            const res = await axios.get(`${BASE_URL}/api/groups`);
-            const data = res.data;
+            const res = await axios.get(`${BASE_URL}/api/groups/not-joined`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
 
-            setGroups(data);
+            console.log("notJoined Groups:", res.data);
 
-            const filtered = data.filter(
-                (g: any) =>
-                    !g.members?.some((m: any) => m.user?.id === uid)
-            );
+            setNotJoined(res.data);
 
-            setNotJoined(filtered);
         } catch (e) {
             console.log("Group load error:", e);
         }
     };
 
-    // 그룹 가입
+    /** 검색 */
+    const searchedGroups =
+        search.trim() === ""
+            ? notJoined
+            : notJoined.filter((g) =>
+                g.groupName.toLowerCase().includes(search.toLowerCase())
+            );
+
+    /** 가입 요청 */
     const handleJoin = async (groupId: number) => {
         const token = await AsyncStorage.getItem("accessToken");
         if (!token || !userId) return;
 
         try {
             await axios.post(
-                `${BASE_URL}/api/groups/${groupId}/join`,
-                { userId: userId },
+                `${BASE_URL}/api/groups/${groupId}/join-request`,
+                { userId: userId }, // body
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            loadGroups(userId);
+            // 가입 요청 후 다시 목록 새로고침
+            loadGroups(userId, token);
+
         } catch (e) {
             console.log("Join error:", e);
         }
     };
 
-    const renderItem = ({ item }: any) => (
-        <View style={styles.card}>
-            <Text style={styles.name}>{item.groupName}</Text>
-            <Text style={styles.desc}>{item.description}</Text>
+    /** 리스트 렌더링 */
+    const renderItem = ({ item }: any) => {
 
-            <TouchableOpacity
-                style={styles.joinButton}
-                onPress={() => handleJoin(item.id)}
-            >
-                <Text style={styles.joinButtonText}>가입하기</Text>
-            </TouchableOpacity>
-        </View>
-    );
+        // ⭐ 백엔드에서 보내주는 joinedStatus 기반
+        const joinedStatus = item.joinedStatus; // "NONE", "PENDING"
+        const isPending = joinedStatus === "PENDING";
+
+        return (
+            <View style={styles.card}>
+                <Text style={styles.name}>{item.groupName}</Text>
+                <Text style={styles.desc}>{item.description}</Text>
+
+                <Text style={styles.memberCount}>
+                     {item.memberCount ?? 0}명 참여 중
+                </Text>
+
+                <TouchableOpacity
+                    style={isPending ? styles.pendingButton : styles.joinButton}
+                    onPress={() => !isPending && handleJoin(item.id)}
+                >
+                    <Text style={styles.joinButtonText}>
+                        {isPending ? "요청 중" : "가입하기"}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        );
+    };
 
     return (
         <View style={styles.container}>
+            <TextInput
+                style={styles.searchInput}
+                placeholder="그룹 이름 검색"
+                value={search}
+                onChangeText={setSearch}
+            />
+
             <Text style={styles.title}>가입하지 않은 그룹</Text>
 
             <FlatList
-                data={notJoined}
+                data={searchedGroups}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
+                ListEmptyComponent={
+                    <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
+                }
             />
 
-            {/* ➕ 오른쪽 하단 플로팅 버튼 */}
             <TouchableOpacity
                 style={styles.fab}
                 onPress={() => navigation.navigate("GroupCreate")}

@@ -5,5 +5,6 @@ data class GroupSimpleDto(
     val groupName: String,
     val description: String,
     val memberCount: Int,
-    val leaderId: Long
+    val leaderId: Long,
+    val joinedStatus: String // "NONE", "PENDING", "APPROVED"
 )

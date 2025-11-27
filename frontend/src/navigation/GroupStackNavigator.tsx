@@ -1,10 +1,19 @@
-import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
 
-import GroupListScreen from "../features/group/screens/GroupListScreen";
-import GroupExploreScreen from "../features/group/screens/GroupExploreScreen";
+// ✔ 그룹 화면들
 import GroupCreateScreen from "../features/group/screens/GroupCreateScreen";
 import GroupDetailScreen from "../features/group/screens/GroupDetailScreen";
+import GroupExploreScreen from "../features/group/screens/GroupExploreScreen";
+import GroupListScreen from "../features/group/screens/GroupListScreen";
+
+// ✔ 그룹 피드 화면들
+import FeedDetailScreen from "../features/groupfeed/screens/FeedDetailScreen";
+import GroupFeedCreateScreen from "../features/groupfeed/screens/GroupFeedCreateScreen";
+import GroupReviewCreateScreen from "../features/groupfeed/screens/GroupReviewCreateScreen";
+
+// ✔ 요청 수신함 화면
+import GroupRequestInboxScreen from "../features/group/screens/GroupRequestInboxScreen";
 
 import { GroupStackParamList } from "../navigation/types/navigation";
 
@@ -13,6 +22,7 @@ const Stack = createNativeStackNavigator<GroupStackParamList>();
 export default function GroupStackNavigator() {
     return (
         <Stack.Navigator>
+
             <Stack.Screen
                 name="GroupHome"
                 component={GroupListScreen}
@@ -36,6 +46,31 @@ export default function GroupStackNavigator() {
                 component={GroupDetailScreen}
                 options={{ title: "그룹 상세" }}
             />
+
+            <Stack.Screen
+                name="GroupFeedCreate"
+                component={GroupFeedCreateScreen}
+                options={{ title: "주제 정하기" }}
+            />
+
+            <Stack.Screen
+                name="FeedDetail"
+                component={FeedDetailScreen}
+                options={{ title: "피드 상세" }}
+            />
+
+            <Stack.Screen
+                name="GroupReviewCreate"
+                component={GroupReviewCreateScreen}
+                options={{ title: "리뷰 작성" }}
+            />
+
+            <Stack.Screen
+                name="GroupRequestInboxScreen"
+                component={GroupRequestInboxScreen}
+                options={{ title: "요청 수신함" }}
+            />
+
         </Stack.Navigator>
     );
 }
