@@ -20,35 +20,41 @@ class SecurityConfig {
 
         http
             .csrf { it.disable() }
-            .cors { }   // ⭐ 필수: CORS 활성화
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .cors { }
+            .sessionManagement {
+                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            }
             .authorizeHttpRequests { auth ->
-                auth
-                    .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/api/groups/**").permitAll()  // 🆘 그룹 API 전체 허용 (테스트용) 추후 수정
-                    .requestMatchers("/api/posts/**").permitAll()
-                    .requestMatchers("/api/follow/**").permitAll()  // 🆘 팔로우 API 전체 허용 (테스트용) 추후 수정
-                    .requestMatchers("/api/users/**").permitAll()  // 🆘 유저 조회 API 전체 허용 (테스트용) 추후 수정
-                    .requestMatchers("/api/group-feed/review/**").permitAll() //리뷰 조회는 공개
 
-                    .anyRequest().authenticated() // 그 외는 인증 필요
-                    .requestMatchers("/api/groups/**").permitAll()
-                    .requestMatchers("/api/posts/**").permitAll()     // ⭐ DELETE 포함 전체 허용
-                    .requestMatchers("/api/follow/**").permitAll()
-                    .requestMatchers("/api/users/**").permitAll()
-                    .anyRequest().authenticated()
+                // 로그인/회원가입 → 인증 불필요
+                auth.requestMatchers("/api/auth/**").permitAll()
+
+                // 유저 공개 API만 허용
+                auth.requestMatchers(
+                    "/api/users/check-nickname",
+                    "/api/users/check-email",
+                ).permitAll()
+
+                // ❗ /api/users/me 는 인증 필요 (permitAll 제거)
+
+                // 임시 풀어둔 API들 (테스트용)
+                auth.requestMatchers("/api/groups/**").permitAll()
+                auth.requestMatchers("/api/posts/**").permitAll()
+                auth.requestMatchers("/api/follow/**").permitAll()
+                auth.requestMatchers("/api/group-feed/review/**").permitAll()
+
+                // 그 외는 인증 필요
+                auth.anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }
 
-    /** ⭐ 프리플라이트 OPTIONS 허용 + 모든 DELETE, PUT 정상 처리 */
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration()
-
-        config.allowedOrigins = listOf("*")       // ⭐ Expo/React Native 전부 허용
+        config.allowedOrigins = listOf("*")
         config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         config.allowedHeaders = listOf("*")
         config.allowCredentials = false
