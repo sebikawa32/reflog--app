@@ -6,10 +6,21 @@ module.exports = function (api) {
       [
         "module-resolver",
         {
-          root: ["./src"], //  루트 디렉토리 명시
+          root: ["./src"],
           alias: {
-            "@": "./src", // "@/..." 형태 import 가능
+            "@": "./src",
           },
+        },
+      ],
+
+      // ⭐ .env 파일 읽기 위해 반드시 필요
+      [
+        "module:react-native-dotenv",
+        {
+          moduleName: "@env",
+          path: ".env",
+          safe: false,
+          allowUndefined: true,
         },
       ],
     ],

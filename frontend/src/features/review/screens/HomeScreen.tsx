@@ -6,6 +6,9 @@ import {
     FlatList,
     Image,
     TouchableOpacity,
+    Modal,
+    TextInput,
+    Button,
 } from "react-native";
 import { HomeStyles as styles } from "../styles/HomeStyles";
 import { userApi } from "../../../api/userApi";
@@ -26,17 +29,18 @@ const categoryFilters = [
 const HomeScreen = () => {
     const navigation = useNavigation<any>();
 
-    // 🔥 네비게이션 상태 로그
-    console.log("[NAVIGATION STATE]", navigation.getState());
-
     const [user, setUser] = useState<any>(null);
     const [posts, setPosts] = useState<any[]>([]);
     const [selectedFilter, setSelectedFilter] = useState("all");
+
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [introduceText, setIntroduceText] = useState("");
 
     const loadHome = async () => {
         try {
             const myInfo = await userApi.getMyInfo();
             setUser(myInfo);
+            setIntroduceText(myInfo.introduce || "");
 
             const myPosts = await postApi.getByUserId(myInfo.id);
             setPosts(myPosts);
@@ -47,7 +51,6 @@ const HomeScreen = () => {
         }
     };
 
-    // 화면 다시 열릴 때마다 새로고침
     useFocusEffect(
         useCallback(() => {
             loadHome();
@@ -61,11 +64,31 @@ const HomeScreen = () => {
             ? posts
             : posts.filter((p) => p.category === selectedFilter);
 
+    const saveIntroduce = async () => {
+        try {
+            await userApi.updateIntroduce(introduceText);
+            setEditModalVisible(false);
+            loadHome();
+        } catch (err) {
+            console.log("❌ 소개글 업데이트 실패:", err);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={{ flex: 1 }}>
-                {/* 🔹 프로필 */}
-                <View style={[styles.profileContainer, { elevation: 0, shadowOpacity: 0 }]}>
+
+                {/* 🔹 프로필 영역 (배경색만 오렌지톤으로 변경) */}
+                <View
+                    style={[
+                        styles.profileContainer,
+                        {
+                            elevation: 0,
+                            shadowOpacity: 0,
+                            backgroundColor: "#FFF6EE", // ✨ 여기가 변경됨 (파스텔 오렌지)
+                        },
+                    ]}
+                >
                     <Image
                         source={{ uri: user.profileImage || DEFAULT_PROFILE_IMG }}
                         style={styles.profileImage}
@@ -76,15 +99,83 @@ const HomeScreen = () => {
                     <View style={styles.statsContainer}>
                         <Text style={styles.statsText}>감상기록 {posts.length}</Text>
                         <Text style={styles.dot}>·</Text>
-                        <Text style={styles.statsText}>팔로워 {user.followerCount}</Text>
+
+                        <TouchableOpacity
+                            onPress={() =>
+                                navigation.navigate("FollowList", {
+                                    userId: user.id,
+                                    type: "followers",
+                                })
+                            }
+                        >
+                            <Text style={styles.statsText}>팔로워 {user.followerCount}</Text>
+                        </TouchableOpacity>
+
                         <Text style={styles.dot}>·</Text>
-                        <Text style={styles.statsText}>팔로잉 {user.followingCount}</Text>
+
+                        <TouchableOpacity
+                            onPress={() =>
+                                navigation.navigate("FollowList", {
+                                    userId: user.id,
+                                    type: "followings",
+                                })
+                            }
+                        >
+                            <Text style={styles.statsText}>팔로잉 {user.followingCount}</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.profileBio}>
-                        {user.introduce || "아직 소개가 없어요"}
-                    </Text>
+                    <TouchableOpacity onPress={() => setEditModalVisible(true)}>
+                        <Text style={styles.profileBio}>
+                            {user.introduce || "아직 소개가 없어요 (눌러서 작성)"}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
+
+                {/* 🔥 소개글 수정 모달 */}
+                <Modal visible={editModalVisible} transparent>
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            justifyContent: "center",
+                            padding: 25,
+                        }}
+                    >
+                        <View
+                            style={{
+                                backgroundColor: "white",
+                                padding: 20,
+                                borderRadius: 10,
+                            }}
+                        >
+                            <Text style={{ fontSize: 18, marginBottom: 10 }}>소개글 수정</Text>
+
+                            <TextInput
+                                value={introduceText}
+                                onChangeText={setIntroduceText}
+                                multiline
+                                placeholder="소개글을 입력하세요"
+                                style={{
+                                    height: 120,
+                                    borderWidth: 1,
+                                    borderColor: "#ccc",
+                                    borderRadius: 8,
+                                    padding: 10,
+                                    marginBottom: 20,
+                                }}
+                            />
+
+                            <Button title="저장" onPress={saveIntroduce} />
+                            <View style={{ height: 10 }} />
+                            <Button
+                                title="취소"
+                                color="gray"
+                                onPress={() => setEditModalVisible(false)}
+                            />
+                        </View>
+                    </View>
+                </Modal>
 
                 {/* 🔹 카테고리 필터 */}
                 <View style={styles.filterBar}>
@@ -95,10 +186,7 @@ const HomeScreen = () => {
                                 styles.filterButton,
                                 selectedFilter === item.key && styles.filterButtonActive,
                             ]}
-                            onPress={() => {
-                                console.log("카테고리 선택:", item.key);
-                                setSelectedFilter(item.key);
-                            }}
+                            onPress={() => setSelectedFilter(item.key)}
                         >
                             <Text
                                 style={[
@@ -112,55 +200,99 @@ const HomeScreen = () => {
                     ))}
                 </View>
 
-                {/* 🔹 게시글 리스트 */}
+                {/* 🔥 2열 그리드 리스트 */}
                 <FlatList
-                    style={{ flex: 1 }}
+                    key={"two-columns"}
                     data={filteredPosts}
+                    numColumns={2}
+                    columnWrapperStyle={{ justifyContent: "space-between" }}
+                    contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 10 }}
                     keyExtractor={(item) => item.postId.toString()}
-                    contentContainerStyle={{ paddingBottom: 120 }}
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => {
-                                console.log("🔥 카드 눌림:", item.postId);
-                                navigation.push("ReviewDetail", { review: item });
+                            onPress={() =>
+                                navigation.push("ReviewDetail", { review: item })
+                            }
+                            style={{
+                                width: "48%",
+                                backgroundColor: "white",
+                                borderRadius: 12,
+                                marginBottom: 16,
+                                padding: 12,
+                                shadowColor: "#000",
+                                shadowOpacity: 0.07,
+                                shadowRadius: 4,
+                                elevation: 1,
                             }}
                         >
-                            <View style={[styles.feedCard, { elevation: 0, shadowOpacity: 0 }]}>
-                                <Text style={styles.feedTitle}>{item.title}</Text>
-                                <Text style={styles.feedContent}>{item.content}</Text>
+                            {/* 이미지 */}
+                            {item.imageUrl && (
+                                <Image
+                                    source={{ uri: item.imageUrl }}
+                                    style={{
+                                        width: "100%",
+                                        height: 200, // 📚 책 표지 직사각형
+                                        borderRadius: 8,
+                                        marginBottom: 8,
+                                        resizeMode: "cover",
+                                    }}
+                                />
+                            )}
 
-                                {item.imageUrl && (
-                                    <Image
-                                        source={{ uri: item.imageUrl }}
-                                        style={{ width: 120, height: 120, borderRadius: 8 }}
-                                    />
-                                )}
+                            {/* 제목 */}
+                            <Text
+                                style={{
+                                    fontSize: 15,
+                                    fontWeight: "600",
+                                    marginBottom: 6,
+                                }}
+                                numberOfLines={1}
+                            >
+                                {item.title}
+                            </Text>
 
-                                <View style={styles.categoryTag}>
-                                    <Text style={styles.categoryTagText}>
-                                        {item.category}
+                            {/* 별점 */}
+                            <View style={{ flexDirection: "row", marginBottom: 6 }}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <Text
+                                        key={star}
+                                        style={{
+                                            fontSize: 16,
+                                            color:
+                                                star <= (item.rating || 0)
+                                                    ? "#FF3333"
+                                                    : "#ccc",
+                                            marginRight: 2,
+                                        }}
+                                    >
+                                        ★
                                     </Text>
-                                </View>
+                                ))}
+                            </View>
+
+                            {/* 카테고리 */}
+                            <View
+                                style={{
+                                    alignSelf: "flex-start",
+                                    backgroundColor: "#F2F2F2",
+                                    paddingHorizontal: 6,
+                                    paddingVertical: 3,
+                                    borderRadius: 6,
+                                }}
+                            >
+                                <Text style={{ color: "#777", fontSize: 11 }}>
+                                    {item.category}
+                                </Text>
                             </View>
                         </TouchableOpacity>
                     )}
-                    ListEmptyComponent={
-                        <View style={{ paddingVertical: 40, alignItems: "center" }}>
-                            <Text style={{ fontSize: 16, color: "#888" }}>
-                                아직 작성한 게시글이 없어요
-                            </Text>
-                        </View>
-                    }
                 />
 
                 {/* 🔹 플로팅 버튼 */}
                 <TouchableOpacity
                     style={[styles.fab, { zIndex: 1 }]}
-                    onPress={() => {
-                        console.log("🔥 리뷰 작성 버튼 클릭");
-                        navigation.navigate("ReviewWrite");
-                    }}
+                    onPress={() => navigation.navigate("ReviewWrite")}
                 >
                     <Text style={styles.fabText}>＋</Text>
                 </TouchableOpacity>

@@ -4,6 +4,8 @@ export type HomeStackParamList = {
     ReviewWrite: undefined;
     ReviewEdit: { review: any };
     Feed: undefined;
+    FollowList: { userId: number; type: "followers" | "followings" };
+
 };
 
 export type GroupStackParamList = {
