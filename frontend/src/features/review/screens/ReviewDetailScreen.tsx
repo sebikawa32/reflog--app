@@ -22,31 +22,22 @@ const ReviewDetailScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
 
-    /** FeedCard → ReviewDetail 로 전달된 원본 데이터 */
+    /** HomeScreen → 전달된 원본 데이터 */
     const originalReview = route.params.review;
 
+    /** review.user = {id, nickname, profileImage} */
+    /** review.myId = 로그인한 유저 id */
     const [review, setReview] = useState(originalReview);
     const [rating, setRating] = useState(originalReview.rating || 0);
-    const [myId, setMyId] = useState<number | null>(null); // 로그인한 유저 ID 저장
 
-    /** 🔶 로그인 유저 아이디 가져오기 */
+    /** 🔵 디버그 */
     useEffect(() => {
-        const loadMyInfo = async () => {
-            try {
-                const res = await axios.get(
-                    `${process.env.EXPO_PUBLIC_API_URL}/api/users/me`,
-                    { withCredentials: true }
-                );
-                setMyId(res.data.id);
-            } catch (e) {
-                console.log("인증실패: 작성자 아님: 편집불가", e);
-            }
-        };
+        console.log("🟦 전체 review:", review);
+        console.log("🟩 review.user:", review.user);
+        console.log("🟥 review.myId:", review.myId);
+    }, [review]);
 
-        loadMyInfo();
-    }, []);
-
-    /** 🔶 최신 상세 데이터 다시 불러오기 */
+    /** 🔶 상세 조회 API 호출 → 최신 데이터로 갱신 */
     useEffect(() => {
         const fetchDetail = async () => {
             try {
@@ -54,17 +45,42 @@ const ReviewDetailScreen = () => {
                     `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${originalReview.postId}`
                 );
 
+                // res.data 구조:
+                // {
+                //   postId, title, content, imageUrl, category,
+                //   rating, createdAt, detail,
+                //   userId, userNickname, userProfileImage
+                // }
+
+                const api = res.data;
+
                 setReview((prev: any) => ({
-                    ...prev,        // 기존 데이터 유지 (닉네임, 프로필 등)
-                    ...res.data     // API에서 가져온 상세 정보만 덮어씀
+                    ...prev,
+
+                    // 🔥 백엔드 최신 내용 덮어씀
+                    postId: api.postId,
+                    title: api.title,
+                    content: api.content,
+                    imageUrl: api.imageUrl,
+                    category: api.category,
+                    rating: api.rating,
+                    createdAt: api.createdAt,
+                    detail: api.detail,
+
+                    /** 🔥 백엔드에서 오는 값을 user 객체로 재구성 */
+                    user: {
+                        id: api.userId,
+                        nickname: api.userNickname,
+                        profileImage: api.userProfileImage,
+                    },
                 }));
 
-
-                setRating(res.data.rating);
-            } catch (e) {
-                console.log("❌ 상세 조회 실패:", e);
+                setRating(api.rating);
+            } catch (err) {
+                console.log("❌ 상세 조회 실패:", err);
             }
         };
+
         fetchDetail();
     }, []);
 
@@ -78,9 +94,9 @@ const ReviewDetailScreen = () => {
         }, [route.params])
     );
 
-    /** 🔶 상단 헤더의 ... 버튼 - 내 글일 때만 보여줌 */
+    /** 🔶 상단 ... 버튼 */
     useLayoutEffect(() => {
-        if (myId === review.userId) {
+        if (review.myId === review.user?.id) {
             navigation.setOptions({
                 headerRight: () => (
                     <TouchableOpacity onPress={openMenu}>
@@ -91,24 +107,21 @@ const ReviewDetailScreen = () => {
                 ),
             });
         } else {
-            navigation.setOptions({
-                headerRight: () => null,
-            });
+            navigation.setOptions({ headerRight: () => null });
         }
-    }, [navigation, review, myId]);
+    }, [review, navigation]);
 
     /** 메뉴 */
     const openMenu = () => {
         ActionSheetIOS.showActionSheetWithOptions(
             {
-                options: ["취소", "수정", "삭제", "공유"],
+                options: ["취소", "수정", "삭제"],
                 destructiveButtonIndex: 2,
                 cancelButtonIndex: 0,
             },
-            (buttonIndex) => {
-                if (buttonIndex === 1) handleEdit();
-                else if (buttonIndex === 2) handleDelete();
-                else if (buttonIndex === 3) handleShare();
+            (index) => {
+                if (index === 1) handleEdit();
+                if (index === 2) handleDelete();
             }
         );
     };
@@ -144,68 +157,14 @@ const ReviewDetailScreen = () => {
         ]);
     };
 
-    const handleShare = () => {
-        Alert.alert("공유", "공유 기능은 곧 연결됩니다");
-    };
-
-    /** 🔶 상세 정보 */
-    const renderDetailInfo = () => {
-        const d = review.detail;
-        return (
-            <>
-                <Text style={styles.meta}>카테고리: {review.category}</Text>
-
-                {review.category === "book" && (
-                    <>
-                        {d?.author && <Text style={styles.meta}>저자: {d.author}</Text>}
-                        {d?.publisher && <Text style={styles.meta}>출판사: {d.publisher}</Text>}
-                        {d?.readStartDate && <Text style={styles.meta}>시작일: {d.readStartDate}</Text>}
-                        {d?.readEndDate && <Text style={styles.meta}>종료일: {d.readEndDate}</Text>}
-                    </>
-                )}
-
-                {review.category === "movie" && (
-                    <>
-                        {d?.director && <Text style={styles.meta}>감독: {d.director}</Text>}
-                        {d?.actors && <Text style={styles.meta}>출연: {d.actors}</Text>}
-                        {d?.releaseDate && <Text style={styles.meta}>개봉일: {d.releaseDate}</Text>}
-                        {d?.runningTime && <Text style={styles.meta}>러닝타임: {d.runningTime}</Text>}
-                    </>
-                )}
-
-                {review.category === "drama" && (
-                    <>
-                        {d?.broadcastNetwork && (
-                            <Text style={styles.meta}>방송사: {d.broadcastNetwork}</Text>
-                        )}
-                        {d?.startDate && <Text style={styles.meta}>시작일: {d.startDate}</Text>}
-                        {d?.endDate && <Text style={styles.meta}>종료일: {d.endDate}</Text>}
-                    </>
-                )}
-
-                {review.category === "animation" && (
-                    <>
-                        {d?.studio && <Text style={styles.meta}>제작사: {d.studio}</Text>}
-                        {d?.episodes != null && (
-                            <Text style={styles.meta}>에피소드: {d.episodes}</Text>
-                        )}
-                        {d?.releaseDate && <Text style={styles.meta}>방영일: {d.releaseDate}</Text>}
-                    </>
-                )}
-            </>
-        );
-    };
+    const d = review.detail;
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar style="light" />
 
-            <ScrollView
-                style={styles.container}
-                contentContainerStyle={{ paddingBottom: 40 }}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* 🔶 작성자 정보 (프로필 + 이름 + 날짜) */}
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+                {/* 🔶 작성자 */}
                 <TouchableOpacity
                     style={{
                         flexDirection: "row",
@@ -214,10 +173,14 @@ const ReviewDetailScreen = () => {
                         marginTop: 20,
                         marginBottom: 14,
                     }}
-                    onPress={() => navigation.navigate("UserProfile", { userId: review.userId })}
+                    onPress={() =>
+                        navigation.navigate("UserProfile", { userId: review.user?.id })
+                    }
                 >
                     <Image
-                        source={{ uri: review.userProfileImage || DEFAULT_PROFILE }}
+                        source={{
+                            uri: review.user?.profileImage || DEFAULT_PROFILE,
+                        }}
                         style={{
                             width: 42,
                             height: 42,
@@ -228,7 +191,7 @@ const ReviewDetailScreen = () => {
 
                     <View>
                         <Text style={{ fontSize: 16, fontWeight: "600", color: "#333" }}>
-                            {review.userNickname}
+                            {review.user?.nickname}
                         </Text>
                         <Text style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
                             {review.createdAt?.slice(0, 16)}
@@ -242,7 +205,6 @@ const ReviewDetailScreen = () => {
                         source={{ uri: review.imageUrl || DEFAULT_IMG }}
                         style={styles.coverImage}
                     />
-                    <View style={styles.overlay} />
                 </View>
 
                 {/* 제목 */}
@@ -252,17 +214,15 @@ const ReviewDetailScreen = () => {
                 <View style={styles.ratingContainer}>
                     <View style={styles.stars}>
                         {[1, 2, 3, 4, 5].map((star) => (
-                            <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                                <Text
-                                    style={[
-                                        styles.star,
-                                        rating >= star && styles.activeStar,
-                                        rating === star && styles.selectedStar,
-                                    ]}
-                                >
-                                    ★
-                                </Text>
-                            </TouchableOpacity>
+                            <Text
+                                key={star}
+                                style={[
+                                    styles.star,
+                                    rating >= star && styles.activeStar,
+                                ]}
+                            >
+                                ★
+                            </Text>
                         ))}
                     </View>
                     <Text style={styles.ratingLabel}>{rating} / 5</Text>
@@ -271,8 +231,28 @@ const ReviewDetailScreen = () => {
                 <View style={styles.titleDivider} />
 
                 {/* 상세정보 */}
-                <View style={{ marginHorizontal: 16, marginBottom: 10 }}>
-                    {renderDetailInfo()}
+                <View style={{ marginHorizontal: 16 }}>
+                    <Text style={styles.meta}>카테고리: {review.category}</Text>
+
+                    {review.category === "book" && (
+                        <>
+                            {d?.author && <Text style={styles.meta}>저자: {d.author}</Text>}
+                            {d?.publisher && (
+                                <Text style={styles.meta}>출판사: {d.publisher}</Text>
+                            )}
+                        </>
+                    )}
+
+                    {review.category === "movie" && (
+                        <>
+                            {d?.director && (
+                                <Text style={styles.meta}>감독: {d.director}</Text>
+                            )}
+                            {d?.actors && (
+                                <Text style={styles.meta}>출연: {d.actors}</Text>
+                            )}
+                        </>
+                    )}
                 </View>
 
                 {/* 본문 */}

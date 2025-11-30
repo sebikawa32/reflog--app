@@ -42,7 +42,6 @@ const HomeScreen = () => {
             const myInfo = await userApi.getMyInfo();
             setUser(myInfo);
 
-            // ⭐ 항상 최신 소개글 넣어두기
             setIntroduceText(myInfo.introduce || "");
 
             const myPosts = await postApi.getByUserId(myInfo.id);
@@ -65,7 +64,6 @@ const HomeScreen = () => {
             ? posts
             : posts.filter((p) => p.category === selectedFilter);
 
-    // ⭐ 소개글 저장
     const saveIntroduce = async () => {
         try {
             await userApi.updateIntroduce(introduceText);
@@ -76,7 +74,6 @@ const HomeScreen = () => {
         }
     };
 
-    // ⭐ 소개글 클릭 → 모달 열릴 때 현재 값 그대로 반영
     const openIntroduceEditor = () => {
         setIntroduceText(user.introduce || "");
         setEditModalVisible(true);
@@ -86,7 +83,7 @@ const HomeScreen = () => {
         <SafeAreaView style={{ flex: 1, backgroundColor: "#FF8F1F" }}>
             <View style={{ flex: 1, backgroundColor: "#FF8F1F" }}>
 
-                {/* 🔶 상단 프로필 */}
+                {/* 프로필 */}
                 <View
                     style={{
                         alignItems: "center",
@@ -103,7 +100,6 @@ const HomeScreen = () => {
                         {user.nickname}
                     </Text>
 
-                    {/* ⭐ 소개글 누르면 수정 가능 */}
                     <TouchableOpacity onPress={openIntroduceEditor}>
                         <Text
                             style={{
@@ -160,7 +156,7 @@ const HomeScreen = () => {
                     </View>
                 </View>
 
-                {/* 🔶 카테고리 바 */}
+                {/* 카테고리 */}
                 <View
                     style={{
                         backgroundColor: "#F8F8F8",
@@ -204,7 +200,7 @@ const HomeScreen = () => {
                     </ScrollView>
                 </View>
 
-                {/* 🔶 콘텐츠 영역 */}
+                {/* 내 글 */}
                 <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
                     <FlatList
                         key={"two-columns"}
@@ -221,7 +217,28 @@ const HomeScreen = () => {
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 onPress={() =>
-                                    navigation.push("ReviewDetail", { review: item })
+                                    navigation.push("ReviewDetail", {
+                                        review: {
+                                            postId: item.postId,
+                                            title: item.title,
+                                            rating: item.rating,
+                                            content: item.content,
+                                            imageUrl: item.imageUrl,
+                                            category: item.category,
+                                            detail: item.detail,
+                                            createdAt: item.createdAt,
+
+                                            // ⭐ 작성자 정보는 user 객체 형태로 묶기
+                                            user: {
+                                                id: item.userId,
+                                                nickname: item.userNickname,
+                                                profileImage: item.userProfileImage,
+                                            },
+
+                                            // ⭐ 로그인한 내 userId
+                                            myId: user.id,
+                                        },
+                                    })
                                 }
                                 style={{
                                     width: "48%",
@@ -302,7 +319,7 @@ const HomeScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                {/* ⭐ 소개글 수정 모달 */}
+                {/* 소개글 수정 모달 */}
                 <Modal visible={editModalVisible} transparent>
                     <View
                         style={{
