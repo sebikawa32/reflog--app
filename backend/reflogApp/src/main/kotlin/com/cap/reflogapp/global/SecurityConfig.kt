@@ -40,7 +40,6 @@ class SecurityConfig {
                 // 임시 풀어둔 API들 (테스트용)
                 auth.requestMatchers("/api/groups/**").permitAll()
                 auth.requestMatchers("/api/posts/**").permitAll()
-                auth.requestMatchers("/api/follow/**").permitAll()
                 auth.requestMatchers("/api/group-feed/review/**").permitAll()
 
                 // 그 외는 인증 필요

@@ -1,14 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
+
+import FeedStackNavigator from "./FeedStackNavigator";   // ⭐ Feed 탭 전용 스택
+import HomeStackNavigator from "./HomeStackNavigator";
 import GroupStackNavigator from "./GroupStackNavigator";
 
-// --- 스택 네비게이터 import ---
-import HomeStackNavigator from "./HomeStackNavigator";
-
-// --- 화면 import ---
-import FeedScreen from "../features/feed/screens/FeedScreen";
-import GroupListScreen from "../features/group/screens/GroupListScreen";
 import MyPageScreen from "../features/user/screens/MyPageScreen";
 
 const Tab = createBottomTabNavigator();
@@ -51,6 +48,7 @@ export default function MainNavigator() {
 
                     return <Ionicons name={iconName} size={24} color={color} />;
                 },
+
                 tabBarLabelStyle: {
                     fontSize: 12,
                     fontWeight: "500",
@@ -58,9 +56,11 @@ export default function MainNavigator() {
                 },
             })}
         >
+
+            {/* 🔥 Feed 전용 스택 */}
             <Tab.Screen
                 name="Feed"
-                component={FeedScreen}
+                component={FeedStackNavigator}
                 options={{ title: "피드" }}
             />
 
@@ -72,7 +72,7 @@ export default function MainNavigator() {
 
             <Tab.Screen
                 name="Group"
-                component={GroupStackNavigator}   // ⭐ 이걸로 변경!
+                component={GroupStackNavigator}
                 options={{ title: "그룹" }}
             />
 
@@ -81,6 +81,7 @@ export default function MainNavigator() {
                 component={MyPageScreen}
                 options={{ title: "내정보" }}
             />
+
         </Tab.Navigator>
     );
 }

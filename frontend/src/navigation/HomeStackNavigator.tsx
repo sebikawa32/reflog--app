@@ -1,4 +1,5 @@
 import React from "react";
+import { Text, TouchableOpacity } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "./types/navigation";
 
@@ -7,57 +8,69 @@ import ReviewDetailScreen from "../features/review/screens/ReviewDetailScreen";
 import ReviewWriteScreen from "../features/review/screens/ReviewWriteScreen";
 import ReviewEditScreen from "../features/review/screens/ReviewEditScreen";
 
-// 팔로잉 피드
 import FeedScreen from "../features/feed/screens/FeedScreen";
-
-// ⭐ 팔로워 / 팔로잉 목록 화면 추가
 import FollowListScreen from "../features/user/screens/FollowListScreen";
+import UserProfileScreen from "../features/user/screens/UserProfileScreen";
+import SearchUserScreen from "../features/user/screens/SearchUserScreen";
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export default function HomeStackNavigator() {
     return (
-        <Stack.Navigator>
-            {/* 홈 */}
+        <Stack.Navigator
+            screenOptions={({ navigation }: any) => ({
+                headerShown: true,
+                headerShadowVisible: false,
+                headerBackVisible: false,
+
+                // ⭐ 전체 헤더 색상 통일
+                headerStyle: {
+                    backgroundColor: "#FF8F1F",
+                },
+                headerTitleStyle: {
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: "#FFFFFF",
+                },
+
+                // ⭐ 커스텀 뒤로가기 버튼
+                headerLeft: () => (
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={{ paddingHorizontal: 10 }}
+                    >
+                        <Text
+                            style={{
+                                fontSize: 26,
+                                color: "#FFFFFF",
+                                marginTop: -3,
+                            }}
+                        >
+                            {"<"}
+                        </Text>
+                    </TouchableOpacity>
+                ),
+            })}
+        >
+            {/* 홈은 헤더 숨김 */}
             <Stack.Screen
                 name="Home"
                 component={HomeScreen}
                 options={{ headerShown: false }}
             />
 
-            {/* 상세 */}
-            <Stack.Screen
-                name="ReviewDetail"
-                component={ReviewDetailScreen}
-                options={{ title: "상세 보기" }}
-            />
+            <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} options={{ title: "상세 보기" }} />
+            <Stack.Screen name="ReviewWrite" component={ReviewWriteScreen} options={{ title: "리뷰 작성" }} />
+            <Stack.Screen name="ReviewEdit" component={ReviewEditScreen} options={{ title: "리뷰 수정" }} />
+            <Stack.Screen name="Feed" component={FeedScreen} options={{ title: "팔로잉 피드" }} />
+            <Stack.Screen name="FollowList" component={FollowListScreen} options={{ title: "팔로우 목록" }} />
+            <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: "유저 프로필" }} />
 
-            {/* 작성 */}
+            {/* 검색은 네이티브 헤더 X */}
             <Stack.Screen
-                name="ReviewWrite"
-                component={ReviewWriteScreen}
-                options={{ title: "리뷰 작성" }}
-            />
-
-            {/* 수정 */}
-            <Stack.Screen
-                name="ReviewEdit"
-                component={ReviewEditScreen}
-                options={{ title: "리뷰 수정" }}
-            />
-
-            {/* 피드 */}
-            <Stack.Screen
-                name="Feed"
-                component={FeedScreen}
-                options={{ title: "팔로잉 피드" }}
-            />
-
-            {/* ⭐ 팔로워 / 팔로잉 목록 */}
-            <Stack.Screen
-                name="FollowList"
-                component={FollowListScreen}
-                options={{ title: "팔로우 목록" }}
+                name="SearchUser"
+                component={SearchUserScreen}
+                options={{ headerShown: false }}
             />
         </Stack.Navigator>
     );

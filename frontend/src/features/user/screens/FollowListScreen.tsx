@@ -28,21 +28,47 @@ export default function FollowListScreen({ route, navigation }: any) {
     }, []);
 
     return (
-        <View style={{ flex: 1, padding: 20, backgroundColor: "white" }}>
-            <Text style={{ fontSize: 22, fontWeight: "600", marginBottom: 20 }}>
-                {title}
-            </Text>
+        <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
 
+            {/* ⭐ 상단 타이틀 (커스텀 뒤로가기 제거) */}
+            <View
+                style={{
+                    paddingTop: 60,
+                    paddingHorizontal: 20,
+                    paddingBottom: 20,
+                    backgroundColor: "#ffffff",
+                }}
+            >
+                <Text style={{ fontSize: 22, fontWeight: "700", color: "#333" }}>
+                    {title}
+                </Text>
+            </View>
+
+            {/* 리스트 */}
             <FlatList
                 data={list}
                 keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         style={{
                             flexDirection: "row",
                             alignItems: "center",
                             paddingVertical: 12,
+                            backgroundColor: "white",
+                            marginBottom: 14,
+                            borderRadius: 12,
+                            paddingHorizontal: 12,
+                            shadowColor: "#000",
+                            shadowOpacity: 0.05,
+                            shadowRadius: 4,
+                            elevation: 1,
                         }}
+                        onPress={() =>
+                            navigation.navigate("UserProfile", {
+                                userId: item.id,
+                            })
+                        }
                     >
                         <Image
                             source={{ uri: item.profileImg || DEFAULT_IMG }}
@@ -53,11 +79,21 @@ export default function FollowListScreen({ route, navigation }: any) {
                                 marginRight: 12,
                             }}
                         />
-                        <Text style={{ fontSize: 16 }}>{item.nickname}</Text>
+
+                        <Text style={{ fontSize: 16, fontWeight: "500", color: "#333" }}>
+                            {item.nickname}
+                        </Text>
                     </TouchableOpacity>
                 )}
                 ListEmptyComponent={
-                    <Text style={{ textAlign: "center", color: "#888", marginTop: 40 }}>
+                    <Text
+                        style={{
+                            textAlign: "center",
+                            color: "#888",
+                            marginTop: 40,
+                            fontSize: 15,
+                        }}
+                    >
                         아직 없습니다
                     </Text>
                 }
