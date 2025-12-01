@@ -1,9 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
 import { decode as base64_decode } from "base-64";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { GroupDetailStyles as styles } from "../styles/GroupDetailStyles";
 
@@ -26,11 +25,20 @@ export default function GroupDetailScreen({ route, navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
     const [isLeader, setIsLeader] = useState(false);
 
-    /** 🔥 JWT 디코드 후 첫 초기화 */
+    /** JWT 디코드 후 첫 초기화 */
     useEffect(() => {
         init();
     }, []);
 
+    /** userId가 생겼을 때 그룹 데이터 새로 가져오기 */
+    useEffect(() => {
+        if (userId) {
+            loadGroupDetail(userId);
+            loadFeeds();
+        }
+    }, [userId]);
+
+    /** 초기 로딩 */
     const init = async () => {
         try {
             const token = await AsyncStorage.getItem("accessToken");
@@ -44,19 +52,9 @@ export default function GroupDetailScreen({ route, navigation }: any) {
 
             await Promise.all([loadGroupDetail(uid), loadFeeds()]);
         } catch (e) {
-            console.log("🔥 JWT decode error", e);
+            console.log("JWT decode error", e);
         }
     };
-
-    /** 🔄 화면 다시 포커스될 때 자동 새로고침 */
-    useFocusEffect(
-        useCallback(() => {
-            if (userId) {
-                loadGroupDetail(userId);
-                loadFeeds();
-            }
-        }, [userId])
-    );
 
     /** 그룹 상세 조회 */
     const loadGroupDetail = async (uid: number) => {
@@ -69,14 +67,13 @@ export default function GroupDetailScreen({ route, navigation }: any) {
 
             const data = res.data;
             setGroup(data);
-
             setIsLeader(data.leader?.id === uid);
         } catch (e: any) {
             console.log("🔥 Group detail load error:", e);
 
             if (e.response?.status === 403) {
                 await AsyncStorage.removeItem("accessToken");
-                navigation.reset({ index: 0, routes: [{ name: "Auth" }] });
+                navigation.navigate("Auth"); // reset 제거
             }
         }
     };
@@ -96,7 +93,7 @@ export default function GroupDetailScreen({ route, navigation }: any) {
 
             if (e.response?.status === 403) {
                 await AsyncStorage.removeItem("accessToken");
-                navigation.reset({ index: 0, routes: [{ name: "Auth" }] });
+                navigation.navigate("Auth"); // reset 제거
             }
         }
     };
@@ -105,13 +102,12 @@ export default function GroupDetailScreen({ route, navigation }: any) {
 
     return (
         <View style={styles.container}>
+
             {/* 리더 전용 요청함 버튼 */}
             {isLeader && (
                 <TouchableOpacity
                     style={{ position: "absolute", right: 20, top: 16, zIndex: 10 }}
-                    onPress={() =>
-                        navigation.navigate("GroupRequestInboxScreen", { groupId })
-                    }
+                    onPress={() => navigation.navigate("GroupRequestInbox", { groupId })}
                 >
                     <Ionicons name="mail-outline" size={28} color="#FF7043" />
                 </TouchableOpacity>
@@ -138,7 +134,9 @@ export default function GroupDetailScreen({ route, navigation }: any) {
                             key={feed.id}
                             style={styles.feedCard}
                             onPress={() =>
-                                navigation.navigate("FeedDetail", { feedId: feed.id })
+                                navigation.navigate("FeedDetail", {
+                                    feedId: feed.id,
+                                })
                             }
                         >
                             <Text style={styles.feedTitleText}>{feed.title}</Text>
@@ -155,7 +153,10 @@ export default function GroupDetailScreen({ route, navigation }: any) {
                 <TouchableOpacity
                     style={styles.fab}
                     onPress={() =>
-                        navigation.navigate("GroupFeedCreate", { groupId, leaderId: userId })
+                        navigation.navigate("GroupFeedCreate", {
+                            groupId,
+                            leaderId: userId,
+                        })
                     }
                 >
                     <Text style={styles.fabText}>＋</Text>

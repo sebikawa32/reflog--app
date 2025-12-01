@@ -44,12 +44,18 @@ export default function GroupListScreen() {
     const renderItem = ({ item }: any) => (
         <TouchableOpacity
             style={styles.groupCard}
-            onPress={() => navigation.navigate("GroupDetail", { groupId: item.id })}
+            onPress={() =>
+                navigation.navigate("Group", {
+                    screen: "GroupDetail",
+                    params: { groupId: item.id }
+                })
+            }
         >
             <Text style={styles.groupName}>{item.groupName}</Text>
             <Text style={styles.joined}>가입됨</Text>
         </TouchableOpacity>
     );
+    
 
     return (
         <View style={styles.container}>

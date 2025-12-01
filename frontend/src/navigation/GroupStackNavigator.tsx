@@ -65,11 +65,13 @@ export default function GroupStackNavigator() {
                 options={{ title: "리뷰 작성" }}
             />
 
+            {/* 여기 이름 변경됨: GroupRequestInboxScreen → GroupRequestInbox */}
             <Stack.Screen
-                name="GroupRequestInboxScreen"
+                name="GroupRequestInbox"
                 component={GroupRequestInboxScreen}
                 options={{ title: "요청 수신함" }}
             />
+            
 
         </Stack.Navigator>
     );

@@ -1,174 +1,194 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useIsFocused } from "@react-navigation/native";
 import axios from "axios";
 import { decode as base64_decode } from "base-64";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { GroupDetailStyles as styles } from "../styles/GroupDetailStyles";
+import {
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export default function GroupDetailScreen({ route, navigation }: any) {
+export default function GroupRequestInboxScreen({ route, navigation }: any) {
     const { groupId } = route.params;
 
-    const [group, setGroup] = useState<any>(null);
-    const [feeds, setFeeds] = useState<any[]>([]);
+    const [requests, setRequests] = useState<any[]>([]);
     const [userId, setUserId] = useState<number | null>(null);
-    const [isLeader, setIsLeader] = useState(false);
-    const isFocused = useIsFocused();
 
-    /** 화면에 들어올 때마다 자동 새로고침 */
-    useEffect(() => {
-        loadUser();
-    }, [isFocused]);
-
-    /** JWT → userId 읽기 */
+    /** JWT → userId 추출 */
     const loadUser = async () => {
         const token = await AsyncStorage.getItem("accessToken");
         if (!token) return;
 
-        try {
-            const payload = JSON.parse(
-                base64_decode(token.split(".")[1].padEnd(4, "="))
-            );
+        const payload = JSON.parse(
+            base64_decode(token.split(".")[1].padEnd(4, "="))
+        );
 
-            const uid = payload.userId;
-            setUserId(uid);
-
-            loadDetail(uid);
-            loadFeeds();
-        } catch (e) {
-            console.log("JWT decode error:", e);
-        }
+        setUserId(payload.userId);
     };
 
-    /** 그룹 상세 */
-    const loadDetail = async (uid: number) => {
-        try {
-            const res = await axios.get(`${BASE_URL}/api/groups/${groupId}`);
-            const data = res.data;
+    useEffect(() => {
+        loadUser();
+    }, []);
 
-            setGroup(data);
+    useEffect(() => {
+        if (userId) loadRequests(userId);
+    }, [userId]);
 
-            if (data.leader?.id === uid) {
-                setIsLeader(true);
-            }
-        } catch (e) {
-            console.log("Group detail error:", e);
-        }
-    };
-
-    /** 그룹 피드 목록 */
-    const loadFeeds = async () => {
+    /** 요청 목록 불러오기 */
+    const loadRequests = async (leaderId: number) => {
         try {
             const token = await AsyncStorage.getItem("accessToken");
 
             const res = await axios.get(
-                `${BASE_URL}/api/group-feed/${groupId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
+                `${BASE_URL}/api/groups/${groupId}/pending`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    params: { leaderId },
+                }
             );
 
-            setFeeds(res.data);
+            setRequests(res.data);
         } catch (e) {
-            console.log("Feed load error:", e);
+            console.log("🔥 Request load error:", e);
         }
     };
 
-    if (!group) return <Text>로딩중...</Text>;
+    /** 승인 */
+    const approve = async (memberId: number) => {
+        try {
+            const token = await AsyncStorage.getItem("accessToken");
+
+            await axios.post(
+                `${BASE_URL}/api/groups/members/${memberId}/approve`,
+                { leaderId: userId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            loadRequests(userId!!);
+        } catch (e) {
+            console.log("🔥 Approve error:", e);
+        }
+    };
+
+    /** 거절 */
+    const reject = async (memberId: number) => {
+        try {
+            const token = await AsyncStorage.getItem("accessToken");
+
+            await axios.post(
+                `${BASE_URL}/api/groups/members/${memberId}/reject`,
+                { leaderId: userId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            loadRequests(userId!!);
+        } catch (e) {
+            console.log("🔥 Reject error:", e);
+        }
+    };
+
+    const renderItem = ({ item }: any) => (
+        <View style={styles.card}>
+            <Text style={styles.nickname}>{item.nickname}</Text>
+
+            <View style={styles.buttonRow}>
+                <TouchableOpacity
+                    style={styles.approveBtn}
+                    onPress={() => approve(item.id)}
+                >
+                    <Text style={styles.btnText}>승인</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.rejectBtn}
+                    onPress={() => reject(item.id)}
+                >
+                    <Text style={styles.btnText}>거절</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
-            <ScrollView>
+            <Text style={styles.title}>가입 요청함</Text>
 
-                {/* 그룹 이름 */}
-                <Text style={styles.title}>{group.groupName}</Text>
-
-                {/* 그룹 설명 */}
-                <Text style={styles.description}>{group.description}</Text>
-
-                {/* 리더 정보 + 수신함 버튼 */}
-                <View
-                    style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 16,
-                    }}
-                >
-                    <Text style={styles.leaderText}>
-                        리더: {group.leader?.nickname ?? "알 수 없음"}
-                    </Text>
-
-                    {/* ⭐ 리더만 보이는 수신함 버튼 */}
-                    {isLeader && (
-                        <TouchableOpacity
-                            onPress={() =>
-                                navigation.navigate("GroupRequestInbox", {
-                                    groupId,
-                                })
-                            }
-                            style={{
-                                backgroundColor: "#FF7A00",
-                                paddingVertical: 6,
-                                paddingHorizontal: 12,
-                                borderRadius: 8,
-                            }}
-                        >
-                            <Text
-                                style={{
-                                    color: "#fff",
-                                    fontWeight: "700",
-                                }}
-                            >
-                                수신함
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                <View style={styles.divider} />
-
-                {/* 피드 목록 */}
-                {feeds.length === 0 ? (
-                    <View style={styles.emptyFeedContainer}>
-                        <Text style={styles.emptyFeedText}>
-                            아직 피드가 없어요 😢
-                        </Text>
-                    </View>
-                ) : (
-                    feeds.map((feed) => (
-                        <TouchableOpacity
-                            key={feed.id}
-                            style={styles.feedCard}
-                            onPress={() =>
-                                navigation.navigate("FeedDetail", {
-                                    feedId: feed.id,
-                                })
-                            }
-                        >
-                            <Text style={styles.feedTitleText}>{feed.title}</Text>
-                            <Text style={styles.feedDateText}>
-                                작성일: {feed.createdAt}
-                            </Text>
-                        </TouchableOpacity>
-                    ))
-                )}
-            </ScrollView>
-
-            {/* 리더만 보이는 + 버튼 */}
-            {isLeader && (
-                <TouchableOpacity
-                    style={styles.fab}
-                    onPress={() =>
-                        navigation.navigate("GroupFeedCreate", {
-                            groupId,
-                            leaderId: userId,
-                        })
-                    }
-                >
-                    <Text style={styles.fabText}>＋</Text>
-                </TouchableOpacity>
-            )}
+            <FlatList
+                data={requests}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderItem}
+                ListEmptyComponent={
+                    <Text style={styles.emptyMsg}>대기 중인 요청이 없습니다.</Text>
+                }
+            />
         </View>
     );
 }
+
+/* -------------------------------------------
+      ✅ 앱 기본 스타일과 완전히 통합된 스타일
+------------------------------------------- */
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "#FFFFFF",
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: "700",
+        marginBottom: 15,
+        color: "#222",
+    },
+    card: {
+        backgroundColor: "#FAFAFA",
+        borderRadius: 14,
+        padding: 18,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: "#EDEDED",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+    },
+    nickname: {
+        fontSize: 17,
+        fontWeight: "600",
+        marginBottom: 12,
+        color: "#333",
+    },
+    buttonRow: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        gap: 12,
+    },
+    approveBtn: {
+        backgroundColor: "#FF7A00", // 주황 포인트 색
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+    },
+    rejectBtn: {
+        backgroundColor: "#B0B0B0", // 중립 회색 버튼
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+    },
+    btnText: {
+        color: "#FFFFFF",
+        fontWeight: "600",
+        fontSize: 14,
+    },
+    emptyMsg: {
+        marginTop: 40,
+        textAlign: "center",
+        color: "#888",
+        fontSize: 15,
+    },
+});

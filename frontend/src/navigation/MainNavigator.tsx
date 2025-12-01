@@ -3,9 +3,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 
 import FeedStackNavigator from "./FeedStackNavigator";
-import HomeStackNavigator from "./HomeStackNavigator";
 import GroupStackNavigator from "./GroupStackNavigator";
-import UserStackNavigator from "./UserStackNavigator";   // ⭐ MyPage 전용 스택
+import HomeStackNavigator from "./HomeStackNavigator";
+import UserStackNavigator from "./UserStackNavigator"; // ⭐ MyPage 전용 스택
 
 const Tab = createBottomTabNavigator();
 
@@ -75,7 +75,7 @@ export default function MainNavigator() {
                 options={{ title: "그룹" }}
             />
 
-            {/* ⭐ 프로필 수정, 마이페이지 모두 UserStack에서 관리 */}
+            {/*  프로필 수정, 마이페이지 모두 UserStack에서 관리 */}
             <Tab.Screen
                 name="MyPage"
                 component={UserStackNavigator}
