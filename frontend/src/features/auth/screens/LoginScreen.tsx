@@ -41,10 +41,10 @@ export default function LoginScreen({ navigation }: any) {
       const { accessToken } = res.data;
       await AsyncStorage.setItem("accessToken", accessToken);
 
-      // ✅ RootNavigator에 로그인 상태 갱신 알리기
+      //  RootNavigator에 로그인 상태 갱신 알리기
       await refreshLoginState();
 
-      Alert.alert("로그인 성공", "Reflog에 오신 걸 환영합니다 ✨");
+      
 
       // RootNavigator가 isLoggedIn 상태 감지 후 자동으로 MainNavigator 전환
     } catch (error) {

@@ -2,20 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 import GroupStackNavigator from "./GroupStackNavigator";
-
-// --- 스택 네비게이터 import ---
 import HomeStackNavigator from "./HomeStackNavigator";
+import UserStackNavigator from "./UserStackNavigator";
 
-// --- 화면 import ---
 import FeedScreen from "../features/feed/screens/FeedScreen";
-import GroupListScreen from "../features/group/screens/GroupListScreen";
-import MyPageScreen from "../features/user/screens/MyPageScreen";
 
 const Tab = createBottomTabNavigator();
 
 export default function MainNavigator() {
     return (
         <Tab.Navigator
+            initialRouteName="HomeTab"   // ⭐ 앱 시작 시 두 번째 탭(Home) 먼저 오픈
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarActiveTintColor: "#FF7A00",
@@ -30,7 +27,6 @@ export default function MainNavigator() {
                     shadowRadius: 5,
                     elevation: 2,
                 },
-
                 tabBarIcon: ({ color }) => {
                     let iconName: keyof typeof Ionicons.glyphMap = "home-outline";
 
@@ -58,29 +54,16 @@ export default function MainNavigator() {
                 },
             })}
         >
+            <Tab.Screen name="Feed" component={FeedScreen} options={{ title: "피드" }} />
+            <Tab.Screen name="HomeTab" component={HomeStackNavigator} options={{ title: "홈" }} />
+            <Tab.Screen name="Group" component={GroupStackNavigator} options={{ title: "그룹" }} />
             <Tab.Screen
-                name="Feed"
-                component={FeedScreen}
-                options={{ title: "피드" }}
-            />
+    name="MyPage"
+    component={UserStackNavigator}
+    options={{ title: "내정보" }}
+/>
 
-            <Tab.Screen
-                name="HomeTab"
-                component={HomeStackNavigator}
-                options={{ title: "홈" }}
-            />
-
-            <Tab.Screen
-                name="Group"
-                component={GroupStackNavigator}   // ⭐ 이걸로 변경!
-                options={{ title: "그룹" }}
-            />
-
-            <Tab.Screen
-                name="MyPage"
-                component={MyPageScreen}
-                options={{ title: "내정보" }}
-            />
         </Tab.Navigator>
     );
 }
+
