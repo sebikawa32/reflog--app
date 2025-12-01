@@ -34,6 +34,12 @@ class UserController(
         return userService.getMyInfo()
     }
 
+    /** 🔥 UserResponseDto 그대로 요청 DTO로 재사용 */
+    @PutMapping("/me")
+    fun updateMyProfile(@RequestBody request: UserResponseDto): UserResponseDto {
+        return userService.updateMyProfile(request)
+    }
+
     /** 🔥 소개글 업데이트 */
     @PutMapping("/introduce")
     fun updateIntroduce(

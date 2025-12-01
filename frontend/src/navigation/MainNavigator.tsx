@@ -2,17 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 
-import FeedStackNavigator from "./FeedStackNavigator";   // ⭐ Feed 탭 전용 스택
+import FeedStackNavigator from "./FeedStackNavigator";
 import HomeStackNavigator from "./HomeStackNavigator";
 import GroupStackNavigator from "./GroupStackNavigator";
-
-import MyPageScreen from "../features/user/screens/MyPageScreen";
+import UserStackNavigator from "./UserStackNavigator";   // ⭐ MyPage 전용 스택
 
 const Tab = createBottomTabNavigator();
 
 export default function MainNavigator() {
     return (
         <Tab.Navigator
+            initialRouteName="HomeTab"
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarActiveTintColor: "#FF7A00",
@@ -27,7 +27,6 @@ export default function MainNavigator() {
                     shadowRadius: 5,
                     elevation: 2,
                 },
-
                 tabBarIcon: ({ color }) => {
                     let iconName: keyof typeof Ionicons.glyphMap = "home-outline";
 
@@ -76,12 +75,12 @@ export default function MainNavigator() {
                 options={{ title: "그룹" }}
             />
 
+            {/* ⭐ 프로필 수정, 마이페이지 모두 UserStack에서 관리 */}
             <Tab.Screen
                 name="MyPage"
-                component={MyPageScreen}
+                component={UserStackNavigator}
                 options={{ title: "내정보" }}
             />
-
         </Tab.Navigator>
     );
 }

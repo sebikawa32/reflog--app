@@ -26,15 +26,16 @@ class SecurityConfig {
             }
             .authorizeHttpRequests { auth ->
 
-                // 로그인/회원가입 → 인증 불필요
-                auth.requestMatchers("/api/auth/**").permitAll()
-
-                // 유저 공개 API만 허용
+                // ============================================
+                // ✅ 인증 없이 가능한 API
+                // ============================================
+                auth.requestMatchers("/api/auth/**").permitAll() // 로그인/회원가입
                 auth.requestMatchers(
                     "/api/users/check-nickname",
-                    "/api/users/check-email",
+                    "/api/users/check-email"
                 ).permitAll()
 
+                // 리뷰 조회는 공개 가능
                 // ❗ /api/users/me 는 인증 필요 (permitAll 제거)
 
                 // 임시 풀어둔 API들 (테스트용)
@@ -42,7 +43,18 @@ class SecurityConfig {
                 auth.requestMatchers("/api/posts/**").permitAll()
                 auth.requestMatchers("/api/group-feed/review/**").permitAll()
 
-                // 그 외는 인증 필요
+                // ============================================
+                // ❗ 인증 필요한 API들 (permitAll 제거)
+                // ============================================
+                auth.requestMatchers("/api/users/me").authenticated()
+                auth.requestMatchers("/api/groups/**").authenticated()
+                auth.requestMatchers("/api/posts/**").authenticated()
+                auth.requestMatchers("/api/follow/**").authenticated()
+                auth.requestMatchers("/api/group-feed/**").authenticated()
+
+                // ============================================
+                // 그 외 모든 요청도 인증 필요
+                // ============================================
                 auth.anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)

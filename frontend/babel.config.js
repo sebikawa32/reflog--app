@@ -12,17 +12,6 @@ module.exports = function (api) {
           },
         },
       ],
-
-      // ⭐ .env 파일 읽기 위해 반드시 필요
-      [
-        "module:react-native-dotenv",
-        {
-          moduleName: "@env",
-          path: ".env",
-          safe: false,
-          allowUndefined: true,
-        },
-      ],
     ],
   };
 };

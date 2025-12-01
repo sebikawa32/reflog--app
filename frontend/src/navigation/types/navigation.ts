@@ -19,4 +19,8 @@ export type GroupStackParamList = {
     GroupReviewCreate: { feedId: number };              //리뷰 생성
     GroupRequestInboxScreen: { groupId: number };                       //그룹 요청 수신함
 };
+export type UserStackParamList = {
+    MyPageHome: undefined;
+    ProfileEdit: undefined;
+};
 

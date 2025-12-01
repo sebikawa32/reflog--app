@@ -17,10 +17,10 @@ data class User(
     val password: String,
 
     @Column(nullable = false, unique = true)
-    val nickname: String,
+    var nickname: String,   // ⭐ 수정 가능하도록 변경
 
     @Column(name = "profile_img")
-    val profileImg: String? = null,
+    var profileImg: String? = null,   // ⭐ 수정 가능하도록 변경
 
     @Column(name = "cover_img")
     val coverImg: String? = null,
