@@ -13,8 +13,15 @@ class FeedController(
 
     @GetMapping("/following")
     fun getFollowingFeed(
-        @RequestAttribute("userId") userId: Long
+        @RequestAttribute("userId") userId: Long?
     ): ResponseEntity<List<FeedPostDto>> {
+
+        println("🔥 [FeedController] userId = $userId")
+
+        if (userId == null) {
+            println("❌ userId가 null입니다. JWT 필터에서 userId가 설정되지 않았습니다.")
+            return ResponseEntity.ok(emptyList())
+        }
 
         val feed = feedService.getFollowingFeed(userId)
         return ResponseEntity.ok(feed)

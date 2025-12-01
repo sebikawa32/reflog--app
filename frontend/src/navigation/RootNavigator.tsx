@@ -25,18 +25,18 @@ export default function RootNavigator() {
     Ionicons: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf"),
   });
 
-  // ✅ 토큰 검사 함수
+  // 로그인 여부 체크
   const checkLoginStatus = async () => {
     const token = await AsyncStorage.getItem("accessToken");
     setIsLoggedIn(!!token);
   };
 
-  // ✅ 앱 시작 시 한 번 실행
+  // 앱 시작 시 1회 체크
   useEffect(() => {
     checkLoginStatus();
   }, []);
 
-  // ✅ 로그인 후 상태 반영을 위한 AppState 감지
+  // 앱 포그라운드 복귀 시 로그인 상태 새로고침
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {
@@ -46,33 +46,35 @@ export default function RootNavigator() {
     return () => subscription.remove();
   }, []);
 
-  // ✅ 폰트 로딩 완료 후 스플래시 숨기기
+  // 폰트 로딩 후 스플래시 종료
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
   if (!fontsLoaded || isLoggedIn === null) return null;
 
-  // ✅ 로그아웃 함수
+  // 로그아웃
   const logout = async () => {
     await AsyncStorage.removeItem("accessToken");
     setIsLoggedIn(false);
   };
 
   return (
-    <AuthContext.Provider value={{ logout, refreshLoginState: checkLoginStatus }}>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {isLoggedIn ? (
-            <Stack.Screen name="Main" component={MainNavigator} />
-          ) : (
-            <Stack.Screen name="Auth" component={AuthNavigator} />
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AuthContext.Provider>
+      <AuthContext.Provider value={{ logout, refreshLoginState: checkLoginStatus }}>
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+
+            {isLoggedIn ? (
+                <Stack.Screen name="Main" component={MainNavigator} />
+            ) : (
+                <Stack.Screen name="Auth" component={AuthNavigator} />
+            )}
+
+          </Stack.Navigator>
+        </NavigationContainer>
+      </AuthContext.Provider>
   );
 }
 
-// ✅ 헬퍼 훅
+// 헬퍼 훅
 export const useAuth = () => useContext(AuthContext);

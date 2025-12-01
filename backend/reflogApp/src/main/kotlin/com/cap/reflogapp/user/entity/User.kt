@@ -27,8 +27,14 @@ data class User(
 
     val level: Int = 1,
     val exp: Int = 0,
+
+    // 🔸 참고: bio는 현재 사용 안 하는 듯
     val bio: String? = null,
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    // ⭐ 최종적으로 사용할 소개글 필드
+    @Column(nullable = true)
+    var introduce: String? = null
 )
