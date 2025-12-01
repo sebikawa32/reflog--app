@@ -89,15 +89,15 @@ export default function GroupFeedCreateScreen({ route, navigation }: any) {
             Alert.alert("필수 입력", "제목을 반드시 입력해야 합니다.");
             return;
         }
-
+    
         if (!endDate.trim()) {
             Alert.alert("필수 입력", "목표 날짜를 입력하세요.");
             return;
         }
-
+    
         try {
             const token = await AsyncStorage.getItem("accessToken");
-
+    
             const body = {
                 leaderId,
                 groupId,
@@ -105,21 +105,34 @@ export default function GroupFeedCreateScreen({ route, navigation }: any) {
                 category,
                 contentInfo: buildContentInfo(),
                 introText: desc || null,
-                thumbnailUrl: null, // 이미지 제외
-                endDate, // yyyy-MM-dd
+                thumbnailUrl: null,
+                endDate,
             };
-
-            await axios.post(`${BASE_URL}/api/group-feed/create`, body, {
+    
+            // ⭐ 핵심: 생성된 feedDto 응답 받기
+            const res = await axios.post(`${BASE_URL}/api/group-feed/create`, body, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
+    
+            const createdFeed = res.data;
+    
+            if (!createdFeed || !createdFeed.id) {
+                Alert.alert("에러", "피드는 생성됐지만 ID를 받지 못했습니다.");
+                return;
+            }
+    
             Alert.alert("성공", "그룹 피드가 생성되었습니다!");
-            navigation.goBack();
+    
+            // ⭐ 생성된 피드 상세 페이지로 이동
+            navigation.replace("FeedDetail", { feedId: createdFeed.id });
+    
         } catch (e) {
             console.log("Feed create error:", e);
             Alert.alert("에러", "피드를 생성할 수 없습니다.");
         }
     };
+    
+    
 
     /** 카테고리별 입력칸 */
     const renderCategoryFields = () => {

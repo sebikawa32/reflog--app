@@ -1,204 +1,174 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from "@react-navigation/native";
 import axios from "axios";
+import { decode as base64_decode } from "base-64";
 import React, { useEffect, useState } from "react";
-import {
-    ActivityIndicator,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { GroupDetailStyles as styles } from "../styles/GroupDetailStyles";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export default function GroupRequestInboxScreen({ route, navigation }: any) {
+export default function GroupDetailScreen({ route, navigation }: any) {
     const { groupId } = route.params;
+
+    const [group, setGroup] = useState<any>(null);
+    const [feeds, setFeeds] = useState<any[]>([]);
+    const [userId, setUserId] = useState<number | null>(null);
+    const [isLeader, setIsLeader] = useState(false);
     const isFocused = useIsFocused();
 
-    const [requests, setRequests] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [leaderId, setLeaderId] = useState<number | null>(null);
+    /** 화면에 들어올 때마다 자동 새로고침 */
+    useEffect(() => {
+        loadUser();
+    }, [isFocused]);
 
-    /** 🔥 JWT → leaderId 추출 */
-    const loadLeader = async () => {
+    /** JWT → userId 읽기 */
+    const loadUser = async () => {
         const token = await AsyncStorage.getItem("accessToken");
         if (!token) return;
 
-        const payload = JSON.parse(
-            atob(token.split(".")[1].padEnd(4, "="))
-        );
+        try {
+            const payload = JSON.parse(
+                base64_decode(token.split(".")[1].padEnd(4, "="))
+            );
 
-        setLeaderId(payload.userId);
+            const uid = payload.userId;
+            setUserId(uid);
+
+            loadDetail(uid);
+            loadFeeds();
+        } catch (e) {
+            console.log("JWT decode error:", e);
+        }
     };
 
-    /** 🔥 요청 목록 조회 (백엔드 컨트롤러 그대로 적용) */
-    const loadRequests = async () => {
+    /** 그룹 상세 */
+    const loadDetail = async (uid: number) => {
         try {
-            if (!leaderId) return;
+            const res = await axios.get(`${BASE_URL}/api/groups/${groupId}`);
+            const data = res.data;
 
-            setLoading(true);
+            setGroup(data);
+
+            if (data.leader?.id === uid) {
+                setIsLeader(true);
+            }
+        } catch (e) {
+            console.log("Group detail error:", e);
+        }
+    };
+
+    /** 그룹 피드 목록 */
+    const loadFeeds = async () => {
+        try {
             const token = await AsyncStorage.getItem("accessToken");
 
             const res = await axios.get(
-                `${BASE_URL}/api/groups/${groupId}/pending?leaderId=${leaderId}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-
-            setRequests(res.data);
-        } catch (e) {
-            console.log("❌ 요청 목록 조회 실패:", e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    /** 🔥 승인 (memberId 사용) */
-    const approve = async (memberId: number) => {
-        try {
-            const token = await AsyncStorage.getItem("accessToken");
-
-            await axios.post(
-                `${BASE_URL}/api/groups/members/${memberId}/approve`,
-                { leaderId },
+                `${BASE_URL}/api/group-feed/${groupId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setRequests((prev) => prev.filter((r) => r.id !== memberId));
+            setFeeds(res.data);
         } catch (e) {
-            console.log("❌ 승인 실패:", e);
+            console.log("Feed load error:", e);
         }
     };
 
-    /** 🔥 거절 (memberId 사용) */
-    const reject = async (memberId: number) => {
-        try {
-            const token = await AsyncStorage.getItem("accessToken");
-
-            await axios.post(
-                `${BASE_URL}/api/groups/members/${memberId}/reject`,
-                { leaderId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            setRequests((prev) => prev.filter((r) => r.id !== memberId));
-        } catch (e) {
-            console.log("❌ 거절 실패:", e);
-        }
-    };
-
-    /** 🔥 자동 새로고침 */
-    useEffect(() => {
-        loadLeader(); 
-    }, []);
-
-    useEffect(() => {
-        if (isFocused && leaderId) {
-            loadRequests();
-        }
-    }, [isFocused, leaderId]);
-
-    if (loading) {
-        return (
-            <View
-                style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <ActivityIndicator size="large" />
-            </View>
-        );
-    }
+    if (!group) return <Text>로딩중...</Text>;
 
     return (
-        <ScrollView style={{ flex: 1, padding: 20, backgroundColor: "#fff" }}>
-            <Text
-                style={{
-                    fontSize: 22,
-                    fontWeight: "700",
-                    marginBottom: 20,
-                }}
-            >
-                요청 수신함
-            </Text>
+        <View style={styles.container}>
+            <ScrollView>
 
-            {requests.length === 0 ? (
-                <Text
+                {/* 그룹 이름 */}
+                <Text style={styles.title}>{group.groupName}</Text>
+
+                {/* 그룹 설명 */}
+                <Text style={styles.description}>{group.description}</Text>
+
+                {/* 리더 정보 + 수신함 버튼 */}
+                <View
                     style={{
-                        fontSize: 16,
-                        color: "#888",
-                        textAlign: "center",
-                        marginTop: 30,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 16,
                     }}
                 >
-                    대기 중인 요청이 없습니다.
-                </Text>
-            ) : (
-                requests.map((req) => (
-                    <View
-                        key={req.id}
-                        style={{
-                            backgroundColor: "#f9f9f9",
-                            padding: 16,
-                            borderRadius: 12,
-                            marginBottom: 14,
-                            shadowColor: "#000",
-                            shadowOpacity: 0.05,
-                            shadowRadius: 3,
-                        }}
-                    >
-                        <Text
+                    <Text style={styles.leaderText}>
+                        리더: {group.leader?.nickname ?? "알 수 없음"}
+                    </Text>
+
+                    {/* ⭐ 리더만 보이는 수신함 버튼 */}
+                    {isLeader && (
+                        <TouchableOpacity
+                            onPress={() =>
+                                navigation.navigate("GroupRequestInbox", {
+                                    groupId,
+                                })
+                            }
                             style={{
-                                fontSize: 16,
-                                fontWeight: "600",
-                                marginBottom: 10,
+                                backgroundColor: "#FF7A00",
+                                paddingVertical: 6,
+                                paddingHorizontal: 12,
+                                borderRadius: 8,
                             }}
                         >
-                            {req.nickname}
+                            <Text
+                                style={{
+                                    color: "#fff",
+                                    fontWeight: "700",
+                                }}
+                            >
+                                수신함
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                <View style={styles.divider} />
+
+                {/* 피드 목록 */}
+                {feeds.length === 0 ? (
+                    <View style={styles.emptyFeedContainer}>
+                        <Text style={styles.emptyFeedText}>
+                            아직 피드가 없어요 😢
                         </Text>
-
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                justifyContent: "flex-end",
-                                gap: 10,
-                            }}
-                        >
-                            <TouchableOpacity
-                                onPress={() => approve(req.id)}
-                                style={{
-                                    backgroundColor: "#FF7A00",
-                                    paddingVertical: 8,
-                                    paddingHorizontal: 16,
-                                    borderRadius: 8,
-                                }}
-                            >
-                                <Text style={{ color: "#fff", fontWeight: "700" }}>
-                                    수락
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => reject(req.id)}
-                                style={{
-                                    backgroundColor: "#ccc",
-                                    paddingVertical: 8,
-                                    paddingHorizontal: 16,
-                                    borderRadius: 8,
-                                }}
-                            >
-                                <Text style={{ color: "#333", fontWeight: "700" }}>
-                                    거절
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
                     </View>
-                ))
+                ) : (
+                    feeds.map((feed) => (
+                        <TouchableOpacity
+                            key={feed.id}
+                            style={styles.feedCard}
+                            onPress={() =>
+                                navigation.navigate("FeedDetail", {
+                                    feedId: feed.id,
+                                })
+                            }
+                        >
+                            <Text style={styles.feedTitleText}>{feed.title}</Text>
+                            <Text style={styles.feedDateText}>
+                                작성일: {feed.createdAt}
+                            </Text>
+                        </TouchableOpacity>
+                    ))
+                )}
+            </ScrollView>
+
+            {/* 리더만 보이는 + 버튼 */}
+            {isLeader && (
+                <TouchableOpacity
+                    style={styles.fab}
+                    onPress={() =>
+                        navigation.navigate("GroupFeedCreate", {
+                            groupId,
+                            leaderId: userId,
+                        })
+                    }
+                >
+                    <Text style={styles.fabText}>＋</Text>
+                </TouchableOpacity>
             )}
-        </ScrollView>
+        </View>
     );
 }
